@@ -6,7 +6,6 @@
 typedef struct {
   int *opcode;
   int opcode_length;
-  int* params;
   void (*instruction_function)(int*);
   int* (*identify_params) (int*);
 } Instruction;
