@@ -12,25 +12,40 @@ typedef struct {
   int *(*identify_params)(int *);
 } Instruction;
 
-int* identify_params_ADDS_ER(int* instruction_base){
+int *identify_params_ADDS_ER(int *instruction_base) {
   int params[3];
-  for (size_t i; i < 32; i++){
-    if (i >= (31 - 20) && i <= (31 - 16)){
+  for (size_t i; i < 32; i++) {
+    if (i >= (31 - 20) && i <= (31 - 16)) {
       params[0] += instruction_base[i] * (pow(2, (31 - 16) - i));
-    } else if (i >= (31 - 9) && i <= (31 - 5)){
+    } else if (i >= (31 - 9) && i <= (31 - 5)) {
       params[1] += instruction_base[i] * (pow(2, (31 - 5) - i));
-    } else if (i >= (31 - 4) && i <= 31){
+    } else if (i >= (31 - 4) && i <= 31) {
       params[2] += instruction_base[i] * (pow(2, 31 - i));
     }
   }
   return params;
 }
 
-
+int *identify_params_ADDS_I(int *instruction_base) {
+  int params[4];
+  for (size_t i; i < 32; i++) {
+    if ((31 - 23) <= i <= (31 - 22)) {
+      params[0] += instruction_base[i] * (pow(2, (31 - 22) - i));
+    } else if ((31 - 21) <= i <= (31 - 10)) {
+      params[1] += instruction_base[i] * (pow(2, (31 - 10) - i));
+    } else if ((31 - 9) <= i <= (31 - 5)) {
+      params[2] += instruction_base[i] * (pow(2, (31 - 5) - i));
+    } else if ((31 - 4) <= i <= 31){
+      params[3] += instruction_base[i] * (pow(2, (31 - i)));
+    }
+  }
+  return params;
+}
 
 // definir cada instruccion con su opcode
 void build_instructions() {
-  const int instructions_quantity = 27; // la defini tambien en sim.c, identify_instruction
+  const int instructions_quantity =
+      27; // la defini tambien en sim.c, identify_instruction
   Instruction *instructions[27];
   // tal vez en vez de hacerlo malloc hacerlo estatico total en cada posicion
   // siempre se mantiene el mismo punetro a struct
@@ -60,7 +75,7 @@ void build_instructions() {
   instructions[3] = SUBS_I;
 
   Instruction *HLT;
-  const int op[] = {1, 1, 0, 1, 0, 1, 0, 0, 0, 1, 0}; 
+  const int op[] = {1, 1, 0, 1, 0, 1, 0, 0, 0, 1, 0};
   HLT->opcode = op;
   // agregar funciones
   instructions[4] = HLT;
@@ -156,60 +171,60 @@ void build_instructions() {
   // agregar funciones
   instructions[17] = BLE;
 
-  Instruction* LSL_I;
-  const int op[] = {1,1,0,1,0,0,1,1,0};
-  const int imms_[] = {1,1,1,1,1,1};
+  Instruction *LSL_I;
+  const int op[] = {1, 1, 0, 1, 0, 0, 1, 1, 0};
+  const int imms_[] = {1, 1, 1, 1, 1, 1};
   LSL_I->opcode = op;
   LSL_I->imms = imms_;
   // agregar funciones
   instructions[18] = LSL_I;
 
-  Instruction* LSR_I;
-  const int op[] = {1,1,0,1,0,0,1,1,0}; // no pusimos N
-  const int imms_[] = {0,0,0,0,0,0};
+  Instruction *LSR_I;
+  const int op[] = {1, 1, 0, 1, 0, 0, 1, 1, 0}; // no pusimos N
+  const int imms_[] = {0, 0, 0, 0, 0, 0};
   LSR_I->opcode = op;
   LSR_I->imms = imms_;
   // agregar funciones
   instructions[19] = LSR_I;
 
-  Instruction* STUR;
-  const int op[] = {1,1,1,1,1,0,0,0,0,0,0};
+  Instruction *STUR;
+  const int op[] = {1, 1, 1, 1, 1, 0, 0, 0, 0, 0, 0};
   STUR->opcode = op;
   // agregar funciones
   instructions[20] = STUR;
 
-  Instruction* STURB;
-  const int op[] = {0,0,1,1,1,0,0,0,0,0,0};
+  Instruction *STURB;
+  const int op[] = {0, 0, 1, 1, 1, 0, 0, 0, 0, 0, 0};
   STURB->opcode = op;
   // agregar funciones
   instructions[21] = STURB;
 
-  Instruction* STURH;
-  const int op[] = {0,1,1,1,1,0,0,0,0,0,0};
+  Instruction *STURH;
+  const int op[] = {0, 1, 1, 1, 1, 0, 0, 0, 0, 0, 0};
   STURH->opcode = op;
   // agregar funciones
   instructions[22] = STURH;
 
-  Instruction* LDUR;
-  const int op[] = {1,1,1,1,1,0,0,0,0,1,0};
+  Instruction *LDUR;
+  const int op[] = {1, 1, 1, 1, 1, 0, 0, 0, 0, 1, 0};
   LDUR->opcode = op;
   // agregar funciones
   instructions[23] = LDUR;
 
-  Instruction* LDURH;
-  const int op[] = {0,1,1,1,1,0,0,0,0,1,0};
+  Instruction *LDURH;
+  const int op[] = {0, 1, 1, 1, 1, 0, 0, 0, 0, 1, 0};
   LDURH->opcode = op;
   // agregar funciones
   instructions[24] = LDURH;
 
-  Instruction* LDURB;
-  const int op[] = {0,0,1,1,1,0,0,0,0,1,0};
+  Instruction *LDURB;
+  const int op[] = {0, 0, 1, 1, 1, 0, 0, 0, 0, 1, 0};
   LDURB->opcode = op;
   // agregar funciones
   instructions[25] = LDURB;
 
-  Instruction* MOVZ;
-  const int op[] = {1,1,0,1,0,0,1,0,1};
+  Instruction *MOVZ;
+  const int op[] = {1, 1, 0, 1, 0, 0, 1, 0, 1};
   MOVZ->opcode = op;
   // agregar funciones
   instructions[26] = MOVZ;
