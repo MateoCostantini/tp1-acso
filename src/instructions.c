@@ -37,6 +37,7 @@ void build_instructions() {
   Instruction *ADDS_ER;
   const int op[] = {1, 0, 1, 0, 1, 0, 1, 1, 0, 0, 1};
   ADDS_ER->opcode = op;
+  ADDS_ER->identify_params = identify_params_ADDS_ER;
   // agregar las funciones para esa instruccion en los parametros de la struct
   instructions[0] = ADDS_ER;
 
