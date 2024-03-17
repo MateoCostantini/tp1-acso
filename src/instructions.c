@@ -170,8 +170,120 @@ int *identify_params_B(int *instruction_base) {
   return params;
 }
 
+int *identify_params_BR(int *instruction_base) {
+  int params[1];
+  for (size_t i; i < 32; i++) {
+    if ((31 - 9) <= i <= (31 - 5)) {
+      params[0] += instruction_base[i] * (pow(2, (31 - 5) - i));
+    }
+  }
+  return params;
+}
+
+int *identify_params_Bcond(int *instruction_base) { // muchas dudas con este
+  int params[1];
+  for (size_t i; i < 32; i++) {
+    if ((31 - 3) <= i <= 31) {
+      params[0] += instruction_base[i] * (pow(2, 31 - i));
+    }
+  }
+  return params;
+}
+
+int *identify_params_LS(int *instruction_base) { // si el imms lo vemos antes, es lo mismo lsl y lsr
+  int params[1];
+  for (size_t i; i < 32; i++) {
+    if ((31 - 9) <= i <= (31 - 5)) {
+      params[0] += instruction_base[i] * (pow(2, (31 - 5) - i));
+    } else if ((31 - 4) <= i <= 31) { // El imms que usamos para comparar asumo que
+      params[1] += instruction_base[i] * (pow(2, 31 - i)); // lo tenemos que saber de antes para distinguir lsl y lsr
+    }
+  }
+  return params;
+}
+
+int *identify_params_STUR(int *instruction_base) {
+  int params[1];
+  for (size_t i; i < 32; i++) {
+    if ((31 - 9) <= i <= (31 - 5)) {
+      params[0] += instruction_base[i] * (pow(2, (31 - 5) - i));
+    } else if ((31 - 4) <= i <= 31) { // en este no hay que chequear, necesitamos los 2 en 64bits
+      params[1] += instruction_base[i] * (pow(2, 31 - i));
+    }
+  }
+  return params;
+}
 
 
+int *identify_params_STURB(int *instruction_base) {
+  int params[1];
+  for (size_t i; i < 32; i++) {
+    if ((31 - 9) <= i <= (31 - 5)) {
+      params[0] += instruction_base[i] * (pow(2, (31 - 5) - i));
+    } else if ((31 - 4) <= i <= 31) {  // chequear si hay que guardar el param Rt o no
+      params[1] += instruction_base[i] * (pow(2, 31 - i)); // el manual dice que es algo de 32 bits
+    }
+  }
+  return params;
+}
+
+int *identify_params_STURH(int *instruction_base) {
+  int params[1];
+  for (size_t i; i < 32; i++) {
+    if ((31 - 9) <= i <= (31 - 5)) {
+      params[0] += instruction_base[i] * (pow(2, (31 - 5) - i));
+    } else if ((31 - 4) <= i <= 31) {  // chequear si hay que guardar el param Rt o no
+      params[1] += instruction_base[i] * (pow(2, 31 - i)); // el manual dice que es algo de 32 bits
+    }
+  }
+  return params;
+}
+
+int *identify_params_LDUR(int *instruction_base) {
+  int params[1];
+  for (size_t i; i < 32; i++) {
+    if ((31 - 9) <= i <= (31 - 5)) {
+      params[0] += instruction_base[i] * (pow(2, (31 - 5) - i));
+    } else if ((31 - 4) <= i <= 31) { // en este no hay que chequear, necesitamos los 2 en 64bits
+      params[1] += instruction_base[i] * (pow(2, 31 - i));
+    }
+  }
+  return params;
+}
+
+int *identify_params_LDURH(int *instruction_base) {
+  int params[1];
+  for (size_t i; i < 32; i++) {
+    if ((31 - 9) <= i <= (31 - 5)) {
+      params[0] += instruction_base[i] * (pow(2, (31 - 5) - i));
+    } else if ((31 - 4) <= i <= 31) {  // chequear si hay que guardar el param Rt o no
+      params[1] += instruction_base[i] * (pow(2, 31 - i)); // el manual dice que es algo de 32 bits
+    }
+  }
+  return params;
+}
+
+int *identify_params_LDURB(int *instruction_base) {
+  int params[1];
+  for (size_t i; i < 32; i++) {
+    if ((31 - 9) <= i <= (31 - 5)) {
+      params[0] += instruction_base[i] * (pow(2, (31 - 5) - i));
+    } else if ((31 - 4) <= i <= 31) {  // chequear si hay que guardar el param Rt o no
+      params[1] += instruction_base[i] * (pow(2, 31 - i)); // el manual dice que es algo de 32 bits
+    }
+  }
+  return params;
+}
+
+int *identify_params_MOVZ(int *instruction_base) {
+  int params[1];
+  for (size_t i; i < 32; i++) {
+    if ((31 - 4) <= i <= 31) {
+      params[0] += instruction_base[i] * (pow(2, 31 - i));
+    }
+  }
+  return params;
+}
 
 
 
