@@ -12,13 +12,28 @@ typedef struct {
   int *(*identify_params)(int *);
 } Instruction;
 
+int* identify_params_ADDS_ER(int* instruction_base){
+  int params[3];
+  for (size_t i; i < 32; i++){
+    if (i >= (31 - 20) && i <= (31 - 16)){
+      params[0] += instruction_base[i] * (pow(2, (31 - 16) - i));
+    } else if (i >= (31 - 9) && i <= (31 - 5)){
+      params[1] += instruction_base[i] * (pow(2, (31 - 5) - i));
+    } else if (i >= (31 - 4) && i <= 31){
+      params[2] += instruction_base[i] * (pow(2, 31 - i));
+    }
+  }
+  return params;
+}
+
+
+
 // definir cada instruccion con su opcode
-void func() {
-  const int instructions_quantity = 26; // la defini tambien en sim.c, identify_instruction
-  Instruction **instructions = malloc(instructions_quantity * sizeof(Instruction *));
+void build_instructions() {
+  const int instructions_quantity = 27; // la defini tambien en sim.c, identify_instruction
+  Instruction *instructions[27];
   // tal vez en vez de hacerlo malloc hacerlo estatico total en cada posicion
   // siempre se mantiene el mismo punetro a struct
-
   Instruction *ADDS_ER;
   const int op[] = {1, 0, 1, 0, 1, 0, 1, 1, 0, 0, 1};
   ADDS_ER->opcode = op;

@@ -57,7 +57,7 @@ int *hex2bin(char *instruction) {
 
 Instruction* identify_instruction(int *instruction_base, Instruction* instructions) {
   Instruction* chosen_instruction;
-  const int instructions_quantity = 26; //chequear
+  const int instructions_quantity = 27; //chequear
   for (size_t i = 0; i < instructions_quantity; i++){
     bool aux = true;
     for (size_t j = 0; j < instructions[i].opcode_length; j++){
