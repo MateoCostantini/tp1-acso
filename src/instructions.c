@@ -12,7 +12,17 @@ typedef struct {
   int *(*identify_params)(int *);
 } Instruction;
 
-int *identify_params_ADDS_ER(int *instruction_base) {
+// me agarro la duda si la forma de acceder a los registros y memoria es con int
+// binario y no decimal!!
+
+// Hay funciones que se repiten (son iguales) habria que sacar las repetidas y
+// generalizar
+
+// habria que inicializar params como arreglos de 0s xq sino sumaria cualquier cosa
+
+int *identify_params_ADDS_ER(
+    int *instruction_base) { // chequear si el opction y imm3 hay que ponerlo
+                             // como param
   int params[3];
   for (size_t i; i < 32; i++) {
     if (i >= (31 - 20) && i <= (31 - 16)) {
@@ -35,12 +45,135 @@ int *identify_params_ADDS_I(int *instruction_base) {
       params[1] += instruction_base[i] * (pow(2, (31 - 10) - i));
     } else if ((31 - 9) <= i <= (31 - 5)) {
       params[2] += instruction_base[i] * (pow(2, (31 - 5) - i));
-    } else if ((31 - 4) <= i <= 31){
+    } else if ((31 - 4) <= i <= 31) {
       params[3] += instruction_base[i] * (pow(2, (31 - i)));
     }
   }
   return params;
 }
+
+int *identify_params_SUBS_ER(int *instruction_base) {
+  int params[3];
+  for (size_t i; i < 32; i++) {
+    if ((31 - 20) <= i <= (31 - 16)) {
+      params[0] += instruction_base[i] * (pow(2, (31 - 16) - i));
+    } else if ((31 - 9) <= i <= (31 - 5)) {
+      params[1] += instruction_base[i] * (pow(2, (31 - 5) - i));
+    } else if ((31 - 4) <= i <= 31) {
+      params[3] += instruction_base[i] * (pow(2, (31 - i)));
+    }
+  }
+  return params;
+}
+
+int *identify_params_SUBS_I(int *instruction_base) {
+  int params[4];
+  for (size_t i; i < 32; i++) {
+    if ((31 - 23) <= i <= (31 - 22)) {
+      params[0] += instruction_base[i] * (pow(2, (31 - 22) - i));
+    } else if ((31 - 21) <= i <= (31 - 10)) {
+      params[1] += instruction_base[i] * (pow(2, (31 - 10) - i));
+    } else if ((31 - 9) <= i <= (31 - 5)) {
+      params[2] += instruction_base[i] * (pow(2, (31 - 5) - i));
+    } else if ((31 - 4) <= i <= 31) {
+      params[3] += instruction_base[i] * (pow(2, (31 - i)));
+    }
+  }
+  return params;
+}
+
+int *identify_params_HLT(int *instruction_base) {
+  int params[1];
+  for (size_t i; i < 32; i++) {
+    if ((31 - 20) <= i <= (31 - 5)) {
+      params[0] += instruction_base[i] * (pow(2, (31 - 5) - i));
+    }
+  }
+  return params;
+}
+
+int *identify_params_CMP_ER(int *instruction_base) {
+  int params[2];
+  for (size_t i; i < 32; i++) {
+    if ((31 - 20) <= i <= (31 - 16)) {
+      params[0] += instruction_base[i] * (pow(2, (31 - 16) - i));
+    } else if ((31 - 9) <= i <= (31 - 5)) {
+      params[1] += instruction_base[i] * (pow(2, (31 - 5) - i));
+    }
+  }
+  return params;
+}
+
+int *identify_params_CMP_I(int *instruction_base) {
+  int params[3];
+  for (size_t i; i < 32; i++) {
+    if ((31 - 23) <= i <= (31 - 22)) {
+      params[0] += instruction_base[i] * (pow(2, (31 - 22) - i));
+    } else if ((31 - 21) <= i <= (31 - 10)) {
+      params[1] += instruction_base[i] * (pow(2, (31 - 10) - i));
+    } else if ((31 - 9) <= i <= (31 - 5)) {
+      params[2] += instruction_base[i] * (pow(2, (31 - 5) - i));
+    }
+  }
+  return params;
+}
+
+int *identify_params_ANDS_SR(int *instruction_base) {
+  int params[3];
+  for (size_t i; i < 32; i++) {
+    if ((31 - 20) <= i <= (31 - 16)) {
+      params[0] += instruction_base[i] * (pow(2, (31 - 16) - i));
+    } else if ((31 - 9) <= i <= (31 - 5)) {
+      params[1] += instruction_base[i] * (pow(2, (31 - 5) - i));
+    } else if ((31 - 4) <= i <= 31) {
+      params[2] += instruction_base[i] * (pow(2, 31 - i));
+    }
+  }
+  return params;
+}
+
+int *identify_params_EOR_SR(int *instruction_base) {
+  int params[3];
+  for (size_t i; i < 32; i++) {
+    if ((31 - 20) <= i <= (31 - 16)) {
+      params[0] += instruction_base[i] * (pow(2, (31 - 16) - i));
+    } else if ((31 - 9) <= i <= (31 - 5)) {
+      params[1] += instruction_base[i] * (pow(2, (31 - 5) - i));
+    } else if ((31 - 4) <= i <= 31) {
+      params[2] += instruction_base[i] * (pow(2, 31 - i));
+    }
+  }
+  return params;
+}
+
+int *identify_params_ORR_SR(int *instruction_base) {
+  int params[3];
+  for (size_t i; i < 32; i++) {
+    if ((31 - 20) <= i <= (31 - 16)) {
+      params[0] += instruction_base[i] * (pow(2, (31 - 16) - i));
+    } else if ((31 - 9) <= i <= (31 - 5)) {
+      params[1] += instruction_base[i] * (pow(2, (31 - 5) - i));
+    } else if ((31 - 4) <= i <= 31) {
+      params[2] += instruction_base[i] * (pow(2, 31 - i));
+    }
+  }
+  return params;
+}
+
+int *identify_params_B(int *instruction_base) {
+  int params[1];
+  for (size_t i; i < 32; i++) {
+    if ((31 - 25) <= i <= 31) {
+      params[0] += instruction_base[i] * (pow(2, 31 - i));
+    }
+  }
+  return params;
+}
+
+
+
+
+
 
 // definir cada instruccion con su opcode
 void build_instructions() {
@@ -75,7 +208,8 @@ void build_instructions() {
   instructions[3] = SUBS_I;
 
   Instruction *HLT;
-  const int op[] = {1, 1, 0, 1, 0, 1, 0, 0, 0, 1, 0};
+  const int op[] = {1, 1, 0, 1, 0, 1,
+                    0, 0, 0, 1, 0}; // chequear si falta un 0 por la consigna
   HLT->opcode = op;
   // agregar funciones
   instructions[4] = HLT;
