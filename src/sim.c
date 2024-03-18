@@ -2,7 +2,6 @@
 #include <stdio.h>
 #include <string.h>
 #include <stdbool.h>
-#include "shell.h"
 #include "instructions_calloc.c"
 
 /*

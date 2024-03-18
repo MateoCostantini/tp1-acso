@@ -1,11 +1,10 @@
+#include "shell.h"
+#include <math.h>
 #include <stdio.h>
 #include <stdlib.h>
-#include <math.h>
-
 
 // agergar al makefile
 // falta tambien definir el length del opcode para cada instruccion
-
 
 typedef struct {
   const int *opcode;
@@ -16,25 +15,23 @@ typedef struct {
   int *(*identify_params)(int *);
 } Instruction;
 
-
-
 // me agarro la duda si la forma de acceder a los registros y memoria es con int
 // binario y no decimal!!
 
 // Hay funciones que se repiten (son iguales) habria que sacar las repetidas y
 // generalizar
 
-// habria que inicializar params como arreglos de 0s xq sino sumaria cualquier cosa
+// habria que inicializar params como arreglos de 0s xq sino sumaria cualquier
+// cosa
 
-int *identify_params_1(
-    int *instruction_base) { // chequear si el opction y imm3 hay que ponerlo
-                             // como param
+int *identify_params_1(int *instruction_base) { // chequear si el opction y imm3
+                                                // hay que ponerlo como param
   // sirve para ADDS_ER, SUBS_ER, ANDS_SR, EOR_SR, ORR_SR
   int *params = (int *)calloc(3, sizeof(int));
   if (params == NULL) {
     return NULL;
   }
-  for (size_t i=0; i < 32; i++) {
+  for (size_t i = 0; i < 32; i++) {
     if (i >= (31 - 20) && i <= (31 - 16)) {
       params[0] += instruction_base[i] * (pow(2, (31 - 16) - i));
     } else if (i >= (31 - 9) && i <= (31 - 5)) {
@@ -52,7 +49,7 @@ int *identify_params_2(int *instruction_base) {
   if (params == NULL) {
     return NULL;
   }
-  for (size_t i=0; i < 32; i++) {
+  for (size_t i = 0; i < 32; i++) {
     if ((31 - 23) <= i <= (31 - 22)) {
       params[0] += instruction_base[i] * (pow(2, (31 - 22) - i));
     } else if ((31 - 21) <= i <= (31 - 10)) {
@@ -71,7 +68,7 @@ int *identify_params_HLT(int *instruction_base) {
   if (params == NULL) {
     return NULL;
   }
-  for (size_t i=0; i < 32; i++) {
+  for (size_t i = 0; i < 32; i++) {
     if ((31 - 20) <= i <= (31 - 5)) {
       params[0] += instruction_base[i] * (pow(2, (31 - 5) - i));
     }
@@ -84,7 +81,7 @@ int *identify_params_CMP_ER(int *instruction_base) {
   if (params == NULL) {
     return NULL;
   }
-  for (size_t i=0; i < 32; i++) {
+  for (size_t i = 0; i < 32; i++) {
     if ((31 - 20) <= i <= (31 - 16)) {
       params[0] += instruction_base[i] * (pow(2, (31 - 16) - i));
     } else if ((31 - 9) <= i <= (31 - 5)) {
@@ -99,7 +96,7 @@ int *identify_params_CMP_I(int *instruction_base) {
   if (params == NULL) {
     return NULL;
   }
-  for (size_t i=0; i < 32; i++) {
+  for (size_t i = 0; i < 32; i++) {
     if ((31 - 23) <= i <= (31 - 22)) {
       params[0] += instruction_base[i] * (pow(2, (31 - 22) - i));
     } else if ((31 - 21) <= i <= (31 - 10)) {
@@ -116,7 +113,7 @@ int *identify_params_B(int *instruction_base) {
   if (params == NULL) {
     return NULL;
   }
-  for (size_t i=0; i < 32; i++) {
+  for (size_t i = 0; i < 32; i++) {
     if ((31 - 25) <= i <= 31) {
       params[0] += instruction_base[i] * (pow(2, 31 - i));
     }
@@ -129,7 +126,7 @@ int *identify_params_BR(int *instruction_base) {
   if (params == NULL) {
     return NULL;
   }
-  for (size_t i=0; i < 32; i++) {
+  for (size_t i = 0; i < 32; i++) {
     if ((31 - 9) <= i <= (31 - 5)) {
       params[0] += instruction_base[i] * (pow(2, (31 - 5) - i));
     }
@@ -142,7 +139,7 @@ int *identify_params_Bcond(int *instruction_base) { // muchas dudas con este
   if (params == NULL) {
     return NULL;
   }
-  for (size_t i=0; i < 32; i++) {
+  for (size_t i = 0; i < 32; i++) {
     if ((31 - 3) <= i <= 31) {
       params[0] += instruction_base[i] * (pow(2, 31 - i));
     }
@@ -150,13 +147,13 @@ int *identify_params_Bcond(int *instruction_base) { // muchas dudas con este
   return params;
 }
 
-int *identify_params_3(int *instruction_base){
+int *identify_params_3(int *instruction_base) {
   // sirve para LSR, LSL, STUR, STURB, STURH, LDUR, LDURH, LDURB
   int *params = (int *)calloc(2, sizeof(int));
   if (params == NULL) {
     return NULL;
   }
-  for (size_t i=0; i < 32; i++) {
+  for (size_t i = 0; i < 32; i++) {
     if ((31 - 9) <= i <= (31 - 5)) {
       params[0] += instruction_base[i] * (pow(2, (31 - 5) - i));
     } else if ((31 - 4) <= i <= 31) {
@@ -171,7 +168,7 @@ int *identify_params_MOVZ(int *instruction_base) {
   if (params == NULL) {
     return NULL;
   }
-  for (size_t i=0; i < 32; i++) {
+  for (size_t i = 0; i < 32; i++) {
     if ((31 - 4) <= i <= 31) {
       params[0] += instruction_base[i] * (pow(2, 31 - i));
     }
@@ -179,14 +176,36 @@ int *identify_params_MOVZ(int *instruction_base) {
   return params;
 }
 
+void function_ADDS_ER(int *params) {
+  int x1 = CURRENT_STATE.REGS[params[1]];
+  int x2 = CURRENT_STATE.REGS[params[0]];
+  int x0 = x1 + x2;
+
+  if (x0 == 0) {
+    NEXT_STATE.FLAG_Z = 1;
+    NEXT_STATE.FLAG_N = 0;
+  } else if (x0 < 0){
+    NEXT_STATE.FLAG_N = 1;
+    NEXT_STATE.FLAG_Z = 0;
+  }else{
+    NEXT_STATE.FLAG_N = 0;
+    NEXT_STATE.FLAG_Z = 0;
+  }
+  NEXT_STATE.REGS[params[2]] = x0;
+  NEXT_STATE.PC += 32;
+}
+
+
+
+
 
 
 // definir cada instruccion con su opcode
-Instruction** build_instructions() {
+Instruction **build_instructions() {
   const int instructions_quantity =
       27; // la defini tambien en sim.c, identify_instruction
-  Instruction **instructions = malloc(sizeof(Instruction*) * 27);
-  if (instructions == NULL){
+  Instruction **instructions = malloc(sizeof(Instruction *) * 27);
+  if (instructions == NULL) {
     return NULL;
   }
   // tal vez en vez de hacerlo malloc hacerlo estatico total en cada posicion
@@ -216,7 +235,9 @@ Instruction** build_instructions() {
   instructions[3] = SUBS_I;
 
   Instruction *HLT;
-  HLT->opcode = (const int[]){1, 1, 0, 1, 0, 1,0, 0, 0, 1, 0};  // chequear si falta un 0 por la consigna
+  HLT->opcode =
+      (const int[]){1, 1, 0, 1, 0, 1,
+                    0, 0, 0, 1, 0}; // chequear si falta un 0 por la consigna
   HLT->identify_params = identify_params_HLT;
   // agregar funciones
   instructions[4] = HLT;
@@ -228,7 +249,7 @@ Instruction** build_instructions() {
   instructions[5] = CMP_ER;
 
   Instruction *CMP_I;
-  CMP_I->opcode = (const int[]) {1, 1, 1, 1, 0, 0, 0, 1};
+  CMP_I->opcode = (const int[]){1, 1, 1, 1, 0, 0, 0, 1};
   CMP_I->identify_params = identify_params_CMP_I;
   // agregar funciones
   instructions[6] = CMP_I;
@@ -258,7 +279,8 @@ Instruction** build_instructions() {
   instructions[10] = B;
 
   Instruction *BR;
-  BR->opcode = (const int[]){1, 1, 0, 1, 0, 1, 1, 0, 0, 0, 0,1, 1, 1, 1, 1, 0, 0, 0, 0, 0, 0};
+  BR->opcode = (const int[]){1, 1, 0, 1, 0, 1, 1, 0, 0, 0, 0,
+                             1, 1, 1, 1, 1, 0, 0, 0, 0, 0, 0};
   BR->identify_params = identify_params_BR;
   // agregar funciones
   instructions[11] = BR;
@@ -313,7 +335,7 @@ Instruction** build_instructions() {
   instructions[18] = LSL_I;
 
   Instruction *LSR_I;
-  LSR_I->opcode = (const int[]){1, 1, 0, 1, 0, 0, 1, 1, 0};// no pusimos N
+  LSR_I->opcode = (const int[]){1, 1, 0, 1, 0, 0, 1, 1, 0}; // no pusimos N
   LSR_I->imms = (const int[]){0, 0, 0, 0, 0, 0};
   LSR_I->identify_params = identify_params_3;
   // agregar funciones
