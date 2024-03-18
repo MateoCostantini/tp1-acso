@@ -208,7 +208,34 @@ void function_ADDS_I(int *params) {
   int x0 = x1 + imm;
 
   update_flags(x0);
-  NEXT_STATE.REGS[3] = x0;
+  NEXT_STATE.REGS[3] = x0; // params[3] en vez de 3?
+  NEXT_STATE.PC += 32;
+}
+
+void function_SUBS_CMP_ER(int *params) {
+  int x1 = CURRENT_STATE.REGS[params[1]];
+  int x2 = CURRENT_STATE.REGS[params[0]];
+  int x0 = x1 - x2;
+  
+  if (params[2] != 31){  // esto en binario o que?
+    NEXT_STATE.REGS[params[2]] = x0;
+  }
+  update_flags(x0);
+  NEXT_STATE.PC += 32;
+}
+
+void function_SUBS_CMP_I(int *params) {
+  int x1 = CURRENT_STATE.REGS[params[2]];
+  int imm = params[1];
+  if (params[0] == 1) {
+    int imm = imm << 12;
+  }
+  int x0 = x1 - imm;
+
+  if (params[2] != 31){  // esto en binario o que?
+    NEXT_STATE.REGS[params[3]] = x0;
+  }
+  update_flags(x0);
   NEXT_STATE.PC += 32;
 }
 
@@ -246,21 +273,21 @@ Instruction **build_instructions() {
   ADDS_I->identify_params = identify_params_2;
   instructions[1] = ADDS_I;
 
-  Instruction *SUBS_ER = malloc(sizeof(Instruction));
-  if (SUBS_ER == NULL)
+  Instruction *SUBS_CMP_ER = malloc(sizeof(Instruction));
+  if (SUBS_CMP_ER == NULL)
     return NULL;
-  SUBS_ER->opcode = (const int[]){1, 1, 1, 0, 1, 0, 1, 1, 0, 0, 1};
-  SUBS_ER->identify_params = identify_params_1;
+  SUBS_CMP_ER->opcode = (const int[]){1, 1, 1, 0, 1, 0, 1, 1, 0, 0, 1};
+  SUBS_CMP_ER->identify_params = identify_params_1;
   // agregar funciones
-  instructions[2] = SUBS_ER;
+  instructions[2] = SUBS_CMP_ER;
 
-  Instruction *SUBS_I = malloc(sizeof(Instruction));
-  if (SUBS_I == NULL)
+  Instruction *SUBS_CMP_I = malloc(sizeof(Instruction));
+  if (SUBS_CMP_I == NULL)
     return NULL;
-  SUBS_I->opcode = (const int[]){1, 1, 1, 1, 0, 0, 0, 1};
-  SUBS_I->identify_params = identify_params_2;
+  SUBS_CMP_I->opcode = (const int[]){1, 1, 1, 1, 0, 0, 0, 1};
+  SUBS_CMP_I->identify_params = identify_params_2;
   // agregar funciones
-  instructions[3] = SUBS_I;
+  instructions[3] = SUBS_CMP_I;
 
   Instruction *HLT = malloc(sizeof(Instruction));
   if (HLT == NULL)
@@ -271,22 +298,6 @@ Instruction **build_instructions() {
   HLT->identify_params = identify_params_HLT;
   // agregar funciones
   instructions[4] = HLT;
-
-  Instruction *CMP_ER = malloc(sizeof(Instruction));
-  if (CMP_ER == NULL)
-    return NULL;
-  CMP_ER->opcode = (const int[]){1, 1, 1, 0, 1, 0, 1, 1, 0, 0, 1};
-  CMP_ER->identify_params = identify_params_CMP_ER;
-  // agregar funciones
-  instructions[5] = CMP_ER;
-
-  Instruction *CMP_I = malloc(sizeof(Instruction));
-  if (CMP_I == NULL)
-    return NULL;
-  CMP_I->opcode = (const int[]){1, 1, 1, 1, 0, 0, 0, 1};
-  CMP_I->identify_params = identify_params_CMP_I;
-  // agregar funciones
-  instructions[6] = CMP_I;
 
   Instruction *ANDS_SR = malloc(sizeof(Instruction));
   if (ANDS_SR == NULL)
