@@ -184,10 +184,10 @@ void function_ADDS_ER(int *params) {
   if (x0 == 0) {
     NEXT_STATE.FLAG_Z = 1;
     NEXT_STATE.FLAG_N = 0;
-  } else if (x0 < 0){
+  } else if (x0 < 0) {
     NEXT_STATE.FLAG_N = 1;
     NEXT_STATE.FLAG_Z = 0;
-  }else{
+  } else {
     NEXT_STATE.FLAG_N = 0;
     NEXT_STATE.FLAG_Z = 0;
   }
@@ -195,10 +195,7 @@ void function_ADDS_ER(int *params) {
   NEXT_STATE.PC += 32;
 }
 
-
-
-
-
+void function_ADDS_I(int *params) {}
 
 // definir cada instruccion con su opcode
 Instruction **build_instructions() {
