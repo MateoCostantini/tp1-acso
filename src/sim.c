@@ -2,15 +2,22 @@
 #include <stdio.h>
 #include <string.h>
 #include <stdbool.h>
+#include "shell.h"
+#include "instructions_calloc.c"
 
+/*
 typedef struct {
-  int *opcode;
+  const int *opcode;
+  const int *cond;
+  const int *imms;
   int opcode_length;
-  void (*instruction_function)(int*);
-  int* (*identify_params) (int*);
+  void (*instruction_function)(int *);
+  int *(*identify_params)(int *);
 } Instruction;
+*/
 
 void process_instruction() {
+  Instruction** inst = build_instructions();
   /* execute one instruction here. You should use CURRENT_STATE and modify
    * values in NEXT_STATE. You can call mem_read_32() and mem_write_32() to
    * access memory.
