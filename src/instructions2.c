@@ -7,12 +7,10 @@
 // falta tambien definir el length del opcode para cada instruccion
 
 typedef struct {
-  const int *opcode;
-  const int *cond;
-  const int *imms;
+  uint32_t opcode;
   int opcode_length;
   void (*instruction_function)(int *);
-  int *(*identify_params)(int *);
+  int *(*identify_params)(uint32_t);
 } Instruction;
 
 // me agarro la duda si la forma de acceder a los registros y memoria es con int
@@ -41,155 +39,139 @@ void update_flags(int n) {
   }
 }
 
-int *identify_params_1(int *instruction_base) { // chequear si el opction y imm3
-                                                // hay que ponerlo como param
+int *identify_params_1(
+    uint32_t instruction_base) { // chequear si el opction y imm3
+                                 // hay que ponerlo como param
   // sirve para ADDS_ER, SUBS_ER, ANDS_SR, EOR_SR, ORR_SR
+  uint32_t masks[] = {0b00000000000111110000000000000000,
+                      0b00000000000000000000001111100000,
+                      0b00000000000000000000000000011111};
   int *params = (int *)calloc(3, sizeof(int));
   if (params == NULL) {
     return NULL;
   }
-  for (size_t i = 0; i < 32; i++) {
-    if (i >= (31 - 20) && i <= (31 - 16)) {
-      params[0] += instruction_base[i] * (pow(2, (31 - 16) - i));
-    } else if (i >= (31 - 9) && i <= (31 - 5)) {
-      params[1] += instruction_base[i] * (pow(2, (31 - 5) - i));
-    } else if (i >= (31 - 4) && i <= 31) {
-      params[2] += instruction_base[i] * (pow(2, 31 - i));
-    }
-  }
+  params[0] = (masks[0] & instruction_base) >> 16;
+  params[1] = (masks[1] & instruction_base) >> 5;
+  params[2] = (masks[2] & instruction_base);
   return params;
 }
 
-int *identify_params_2(int *instruction_base) {
+int *identify_params_2(uint32_t instruction_base) {
   // sirve para ADDS_I, SUBS_I
+  uint32_t masks[] = {
+      0b00000000110000000000000000000000, 
+      0b00000000001111111111110000000000,
+      0b00000000000000000000001111100000, 
+      0b00000000000000000000000000011111};
   int *params = (int *)calloc(4, sizeof(int));
   if (params == NULL) {
     return NULL;
   }
-  for (size_t i = 0; i < 32; i++) {
-    if ((31 - 23) <= i <= (31 - 22)) {
-      params[0] += instruction_base[i] * (pow(2, (31 - 22) - i));
-    } else if ((31 - 21) <= i <= (31 - 10)) {
-      params[1] += instruction_base[i] * (pow(2, (31 - 10) - i));
-    } else if ((31 - 9) <= i <= (31 - 5)) {
-      params[2] += instruction_base[i] * (pow(2, (31 - 5) - i));
-    } else if ((31 - 4) <= i <= 31) {
-      params[3] += instruction_base[i] * (pow(2, (31 - i)));
-    }
-  }
+  params[0] = (masks[0] & instruction_base) >> 22;
+  params[1] = (masks[1] & instruction_base) >> 10;
+  params[2] = (masks[2] & instruction_base) >> 5;
+  params[3] = (masks[3] & instruction_base);
   return params;
 }
 
-int *identify_params_HLT(int *instruction_base) {
+int *identify_params_HLT(uint32_t instruction_base) {
+  uint32_t masks[] = {0b00000000000111111111111111100000};
   int *params = (int *)calloc(1, sizeof(int));
   if (params == NULL) {
     return NULL;
   }
-  for (size_t i = 0; i < 32; i++) {
-    if ((31 - 20) <= i <= (31 - 5)) {
-      params[0] += instruction_base[i] * (pow(2, (31 - 5) - i));
-    }
-  }
+  params[0] = (masks[0] & instruction_base) >> 5;
   return params;
 }
 
-int *identify_params_CMP_ER(int *instruction_base) {
+/*int *identify_params_CMP_ER(uint32_t instruction_base) {
+  uint32_t masks[] = {0b00000000000111110000000000000000,
+                      0b00000000000000000000001111100000};
   int *params = (int *)calloc(2, sizeof(int));
   if (params == NULL) {
     return NULL;
   }
-  for (size_t i = 0; i < 32; i++) {
-    if ((31 - 20) <= i <= (31 - 16)) {
-      params[0] += instruction_base[i] * (pow(2, (31 - 16) - i));
-    } else if ((31 - 9) <= i <= (31 - 5)) {
-      params[1] += instruction_base[i] * (pow(2, (31 - 5) - i));
-    }
-  }
+  params[0] = (masks[0] & instruction_base) >> 16;
+  params[1] = (masks[1] & instruction_base) >> 5;
   return params;
-}
+}*/
 
-int *identify_params_CMP_I(int *instruction_base) {
+/*int *identify_params_CMP_I(
+  uint32_t instruction_base) { // se podria unificar con identify 2
+  uint32_t masks[] = {
+      0b00000000110000000000000000000000,
+      0b00000000001111111111110000000000,
+      0b00000000000000000000001111100000,
+  };
   int *params = (int *)calloc(3, sizeof(int));
   if (params == NULL) {
     return NULL;
   }
-  for (size_t i = 0; i < 32; i++) {
-    if ((31 - 23) <= i <= (31 - 22)) {
-      params[0] += instruction_base[i] * (pow(2, (31 - 22) - i));
-    } else if ((31 - 21) <= i <= (31 - 10)) {
-      params[1] += instruction_base[i] * (pow(2, (31 - 10) - i));
-    } else if ((31 - 9) <= i <= (31 - 5)) {
-      params[2] += instruction_base[i] * (pow(2, (31 - 5) - i));
-    }
-  }
+  params[0] = (masks[0] & instruction_base) >> 22;
+  params[1] = (masks[1] & instruction_base) >> 10;
+  params[2] = (masks[2] & instruction_base) >> 5;
   return params;
-}
+}*/
 
-int *identify_params_B(int *instruction_base) {
+int *identify_params_B(uint32_t instruction_base) {
+  uint32_t masks[] = {
+      0b00000011111111111111111111111111,
+  };
   int *params = (int *)calloc(1, sizeof(int));
   if (params == NULL) {
     return NULL;
   }
-  for (size_t i = 0; i < 32; i++) {
-    if ((31 - 25) <= i <= 31) {
-      params[0] += instruction_base[i] * (pow(2, 31 - i));
-    }
-  }
+  params[0] = masks[0] & instruction_base;
   return params;
 }
 
-int *identify_params_BR(int *instruction_base) {
+int *identify_params_BR(uint32_t instruction_base) {
+  uint32_t masks[] = {
+      0b00000000000000000000001111100000,
+  };
   int *params = (int *)calloc(1, sizeof(int));
   if (params == NULL) {
     return NULL;
   }
-  for (size_t i = 0; i < 32; i++) {
-    if ((31 - 9) <= i <= (31 - 5)) {
-      params[0] += instruction_base[i] * (pow(2, (31 - 5) - i));
-    }
-  }
+  params[0] = masks[0] & instruction_base >> 5;
   return params;
 }
 
-int *identify_params_Bcond(int *instruction_base) { // muchas dudas con este
+int *identify_params_Bcond(
+    uint32_t instruction_base) { // tiene imm19 de parametro
+  uint32_t masks[] = {
+      0b00000000111111111111111111100000,
+  };
   int *params = (int *)calloc(1, sizeof(int));
   if (params == NULL) {
     return NULL;
   }
-  for (size_t i = 0; i < 32; i++) {
-    if ((31 - 3) <= i <= 31) {
-      params[0] += instruction_base[i] * (pow(2, 31 - i));
-    }
-  }
+  params[0] = (masks[0] & instruction_base) >> 5;
   return params;
 }
 
-int *identify_params_3(int *instruction_base) {
+int *identify_params_3(uint32_t instruction_base) {
   // sirve para LSR, LSL, STUR, STURB, STURH, LDUR, LDURH, LDURB
-  int *params = (int *)calloc(2, sizeof(int));
+  uint32_t masks[] = {0b00000000000111111111000000000000,
+                      0b00000000000000000000001111100000,
+                      0b00000000000000000000000000011111};
+  int *params = (int *)calloc(3, sizeof(int));
   if (params == NULL) {
     return NULL;
   }
-  for (size_t i = 0; i < 32; i++) {
-    if ((31 - 9) <= i <= (31 - 5)) {
-      params[0] += instruction_base[i] * (pow(2, (31 - 5) - i));
-    } else if ((31 - 4) <= i <= 31) {
-      params[1] += instruction_base[i] * (pow(2, 31 - i));
-    }
-  }
+  params[0] = (masks[0] & instruction_base) >> 12;
+  params[1] = (masks[1] & instruction_base) >> 5;
+  params[2] = masks[2] & instruction_base;
   return params;
 }
 
-int *identify_params_MOVZ(int *instruction_base) {
+int *identify_params_MOVZ(uint32_t instruction_base) {
+  uint32_t masks[] = {0b00000000000000000000000000011111};
   int *params = (int *)calloc(1, sizeof(int));
   if (params == NULL) {
     return NULL;
   }
-  for (size_t i = 0; i < 32; i++) {
-    if ((31 - 4) <= i <= 31) {
-      params[0] += instruction_base[i] * (pow(2, 31 - i));
-    }
-  }
+  params[0] = masks[0] & instruction_base;
   return params;
 }
 
@@ -200,7 +182,7 @@ void function_ADDS_ER(int *params) {
 
   update_flags(x0);
   NEXT_STATE.REGS[params[2]] = x0;
-  NEXT_STATE.PC += 32;
+  NEXT_STATE.PC += 4;
 }
 
 void function_ADDS_I(int *params) {
@@ -213,7 +195,7 @@ void function_ADDS_I(int *params) {
 
   update_flags(x0);
   NEXT_STATE.REGS[params[3]] = x0;
-  NEXT_STATE.PC += 4; // creo que es 4 para todos
+  NEXT_STATE.PC += 4;
 }
 
 void function_SUBS_CMP_ER(int *params) {
@@ -225,7 +207,7 @@ void function_SUBS_CMP_ER(int *params) {
     NEXT_STATE.REGS[params[2]] = x0;
   }
   update_flags(x0);
-  NEXT_STATE.PC += 32;
+  NEXT_STATE.PC += 4;
 }
 
 void function_SUBS_CMP_I(int *params) {
@@ -240,7 +222,7 @@ void function_SUBS_CMP_I(int *params) {
     NEXT_STATE.REGS[params[3]] = x0;
   }
   update_flags(x0);
-  NEXT_STATE.PC += 32;
+  NEXT_STATE.PC += 4;
 }
 
 void function_HLT(int *params) {
@@ -272,7 +254,7 @@ void function_B(int *params) {}
 // definir cada instruccion con su opcode
 Instruction **build_instructions() {
   const int instructions_quantity =
-      27; // la defini tambien en sim.c, identify_instruction
+      23; // la defini tambien en sim.c, identify_instruction
   Instruction **instructions = malloc(sizeof(Instruction *) * 27);
   if (instructions == NULL) {
     return NULL;
@@ -282,7 +264,7 @@ Instruction **build_instructions() {
   Instruction *ADDS_ER = malloc(sizeof(Instruction));
   if (ADDS_ER == NULL)
     return NULL;
-  ADDS_ER->opcode = (const int[]){1, 0, 1, 0, 1, 0, 1, 1, 0, 0, 1};
+  ADDS_ER->opcode = (uint32_t)0b10101011001000000000000000000000;
   ADDS_ER->identify_params = identify_params_1;
   // agregar las funciones para esa instruccion en los parametros de la struct
   instructions[0] = ADDS_ER;
@@ -290,7 +272,7 @@ Instruction **build_instructions() {
   Instruction *ADDS_I = malloc(sizeof(Instruction));
   if (ADDS_I == NULL)
     return NULL;
-  ADDS_I->opcode = (const int[]){1, 0, 1, 1, 0, 0, 0, 1};
+  ADDS_I->opcode = (uint32_t)0b10110001000000000000000000000000;
   ADDS_I->opcode_length = 8;
   // agregar funciones
   ADDS_I->identify_params = identify_params_2;
@@ -300,7 +282,7 @@ Instruction **build_instructions() {
   Instruction *SUBS_CMP_ER = malloc(sizeof(Instruction));
   if (SUBS_CMP_ER == NULL)
     return NULL;
-  SUBS_CMP_ER->opcode = (const int[]){1, 1, 1, 0, 1, 0, 1, 1, 0, 0, 1};
+  SUBS_CMP_ER->opcode = (uint32_t)0b11101011001000000000000000000000;
   SUBS_CMP_ER->identify_params = identify_params_1;
   // agregar funciones
   instructions[2] = SUBS_CMP_ER;
@@ -308,7 +290,7 @@ Instruction **build_instructions() {
   Instruction *SUBS_CMP_I = malloc(sizeof(Instruction));
   if (SUBS_CMP_I == NULL)
     return NULL;
-  SUBS_CMP_I->opcode = (const int[]){1, 1, 1, 1, 0, 0, 0, 1};
+  SUBS_CMP_I->opcode = (uint32_t)0b11110001000000000000000000000000;
   SUBS_CMP_I->identify_params = identify_params_2;
   // agregar funciones
   instructions[3] = SUBS_CMP_I;
@@ -317,180 +299,164 @@ Instruction **build_instructions() {
   if (HLT == NULL)
     return NULL;
   HLT->opcode =
-      (const int[]){1, 1, 0, 1, 0, 1,
-                    0, 0, 0, 1, 0}; // chequear si falta un 0 por la consigna
+      (uint32_t)0b11010100010000000000000000000000; // chequear si falta un 0
+                                                    // por la consigna
   HLT->identify_params = identify_params_HLT;
+  HLT->instruction_function = function_HLT;
   // agregar funciones
   instructions[4] = HLT;
 
   Instruction *ANDS_SR = malloc(sizeof(Instruction));
   if (ANDS_SR == NULL)
     return NULL;
-  ANDS_SR->opcode = (const int[]){1, 1, 1, 0, 1, 0, 1, 0};
+  ANDS_SR->opcode = (uint32_t)0b11101010000000000000000000000000;
   ANDS_SR->identify_params = identify_params_1;
   // agregar funciones
-  instructions[7] = ANDS_SR;
+  instructions[5] = ANDS_SR;
 
   Instruction *EOR_SR = malloc(sizeof(Instruction));
   if (EOR_SR == NULL)
     return NULL;
-  EOR_SR->opcode = (const int[]){1, 1, 0, 0, 1, 0, 1, 0};
+  EOR_SR->opcode = (uint32_t)0b11001010000000000000000000000000;
   EOR_SR->identify_params = identify_params_1;
   // agregar funciones
-  instructions[8] = EOR_SR;
+  instructions[6] = EOR_SR;
 
   Instruction *ORR_SR = malloc(sizeof(Instruction));
   if (ORR_SR == NULL)
     return NULL;
-  ORR_SR->opcode = (const int[]){1, 0, 1, 0, 1, 0, 1, 0};
+  ORR_SR->opcode = (uint32_t)0b10101010000000000000000000000000;
   ORR_SR->identify_params = identify_params_1;
   // agregar funciones
-  instructions[9] = ORR_SR;
+  instructions[7] = ORR_SR;
 
   Instruction *B = malloc(sizeof(Instruction));
   if (B == NULL)
     return NULL;
-  B->opcode = (const int[]){0, 0, 0, 1, 0, 1};
+  B->opcode = (uint32_t)0b00010100000000000000000000000000;
   B->identify_params = identify_params_B;
   // agregar funciones
-  instructions[10] = B;
+  instructions[8] = B;
 
   Instruction *BR = malloc(sizeof(Instruction));
   if (BR == NULL)
     return NULL;
-  BR->opcode = (const int[]){1, 1, 0, 1, 0, 1, 1, 0, 0, 0, 0,
-                             1, 1, 1, 1, 1, 0, 0, 0, 0, 0, 0};
+  BR->opcode = (uint32_t)0b11010110000111110000000000000000;
   BR->identify_params = identify_params_BR;
   // agregar funciones
-  instructions[11] = BR;
+  instructions[9] = BR;
 
   Instruction *BEQ = malloc(sizeof(Instruction));
   if (BEQ == NULL)
     return NULL;
-  BEQ->opcode = (const int[]){0, 1, 0, 1, 0, 1, 0, 0};
-  BEQ->cond = (const int[]){0, 0, 0, 0};
+  BEQ->opcode = (uint32_t)0b01010100000000000000000000000000;
   BEQ->identify_params = identify_params_Bcond;
   // agregar funciones
-  instructions[12] = BEQ;
+  instructions[10] = BEQ;
 
   Instruction *BNE = malloc(sizeof(Instruction));
   if (BNE == NULL)
     return NULL;
-  BNE->opcode = (const int[]){0, 1, 0, 1, 0, 1, 0, 0};
-  BNE->cond = (const int[]){0, 0, 0, 1};
+  BNE->opcode = (uint32_t)0b01010100000000000000000000000001;
   BNE->identify_params = identify_params_Bcond;
   // agregar funciones
-  instructions[13] = BNE;
+  instructions[11] = BNE;
 
   Instruction *BGT = malloc(sizeof(Instruction));
   if (BGT == NULL)
     return NULL;
-  BGT->opcode = (const int[]){0, 1, 0, 1, 0, 1, 0, 0};
-  BGT->cond = (const int[]){1, 1, 0, 0};
+  BGT->opcode = (uint32_t)0b01010100000000000000000000001100;
   BGT->identify_params = identify_params_Bcond;
   // agregar funciones
-  instructions[14] = BGT;
+  instructions[12] = BGT;
 
   Instruction *BLT = malloc(sizeof(Instruction));
   if (BLT == NULL)
     return NULL;
-  BLT->opcode = (const int[]){0, 1, 0, 1, 0, 1, 0, 0};
-  BLT->cond = (const int[]){1, 0, 1, 1};
+  BLT->opcode = (uint32_t)0b01010100000000000000000000001011;
   BLT->identify_params = identify_params_Bcond;
   // agregar funciones
-  instructions[15] = BLT;
+  instructions[13] = BLT;
 
   Instruction *BGE = malloc(sizeof(Instruction));
   if (BGE == NULL)
     return NULL;
-  BGE->opcode = (const int[]){0, 1, 0, 1, 0, 1, 0, 0};
-  BGE->cond = (const int[]){1, 0, 1, 0};
+  BGE->opcode = (uint32_t)0b01010100000000000000000000001010;
   BGE->identify_params = identify_params_Bcond;
   // agregar funciones
-  instructions[16] = BGE;
+  instructions[14] = BGE;
 
   Instruction *BLE = malloc(sizeof(Instruction));
   if (BLE == NULL)
     return NULL;
-  BLE->opcode = (const int[]){0, 1, 0, 1, 0, 1, 0, 0};
-  BLE->cond = (const int[]){1, 1, 0, 1};
+  BLE->opcode = (uint32_t)0b01010100000000000000000000001101;
   BLE->identify_params = identify_params_Bcond;
   // agregar funciones
-  instructions[17] = BLE;
+  instructions[15] = BLE;
 
-  Instruction *LSL_I = malloc(sizeof(Instruction));
-  if (LSL_I == NULL)
+  Instruction *LSL_LSR_I = malloc(sizeof(Instruction));
+  if (LSL_LSR_I == NULL)
     return NULL;
-  LSL_I->opcode = (const int[]){1, 1, 0, 1, 0, 0, 1, 1, 0};
-  LSL_I->imms = (const int[]){1, 1, 1, 1, 1, 1};
-  LSL_I->identify_params = identify_params_3;
+  LSL_LSR_I->opcode = (uint32_t)0b11010011000000000000000000000000; // imms
+  LSL_LSR_I->identify_params = identify_params_3;
   // agregar funciones
-  instructions[18] = LSL_I;
-
-  Instruction *LSR_I = malloc(sizeof(Instruction));
-  if (LSR_I == NULL)
-    return NULL;
-  LSR_I->opcode = (const int[]){1, 1, 0, 1, 0, 0, 1, 1, 0}; // no pusimos N
-  LSR_I->imms = (const int[]){0, 0, 0, 0, 0, 0};
-  LSR_I->identify_params = identify_params_3;
-  // agregar funciones
-  instructions[19] = LSR_I;
+  instructions[16] = LSL_LSR_I;
 
   Instruction *STUR = malloc(sizeof(Instruction));
   if (STUR == NULL)
     return NULL;
-  STUR->opcode = (const int[]){1, 1, 1, 1, 1, 0, 0, 0, 0, 0, 0};
+  STUR->opcode = (uint32_t)0b11111000000000000000000000000000;
   STUR->identify_params = identify_params_3;
   // agregar funciones
-  instructions[20] = STUR;
+  instructions[17] = STUR;
 
   Instruction *STURB = malloc(sizeof(Instruction));
   if (STURB == NULL)
     return NULL;
-  STURB->opcode = (const int[]){0, 0, 1, 1, 1, 0, 0, 0, 0, 0, 0};
+  STURB->opcode = (uint32_t)0b00111000000000000000000000000000;
   STURB->identify_params = identify_params_3;
   // agregar funciones
-  instructions[21] = STURB;
+  instructions[18] = STURB;
 
   Instruction *STURH = malloc(sizeof(Instruction));
   if (STURH == NULL)
     return NULL;
-  STURH->opcode = (const int[]){0, 1, 1, 1, 1, 0, 0, 0, 0, 0, 0};
+  STURH->opcode = (uint32_t)0b01111000000000000000000000000000;
   STURH->identify_params = identify_params_3;
   // agregar funciones
-  instructions[22] = STURH;
+  instructions[19] = STURH;
 
   Instruction *LDUR = malloc(sizeof(Instruction));
   if (LDUR == NULL)
     return NULL;
-  LDUR->opcode = (const int[]){1, 1, 1, 1, 1, 0, 0, 0, 0, 1, 0};
+  LDUR->opcode = (uint32_t)0b11111000010000000000000000000000;
   LDUR->identify_params = identify_params_3;
   // agregar funciones
-  instructions[23] = LDUR;
+  instructions[20] = LDUR;
 
   Instruction *LDURH = malloc(sizeof(Instruction));
   if (LDURH == NULL)
     return NULL;
-  LDURH->opcode = (const int[]){0, 1, 1, 1, 1, 0, 0, 0, 0, 1, 0};
+  LDURH->opcode = (uint32_t)0b01111000010000000000000000000000;
   LDURH->identify_params = identify_params_3;
   // agregar funciones
-  instructions[24] = LDURH;
+  instructions[21] = LDURH;
 
   Instruction *LDURB = malloc(sizeof(Instruction));
   if (LDURB == NULL)
     return NULL;
-  LDURB->opcode = (const int[]){0, 0, 1, 1, 1, 0, 0, 0, 0, 1, 0};
+  LDURB->opcode = (uint32_t)0b00111000010000000000000000000000;
   LDURB->identify_params = identify_params_3;
   // agregar funciones
-  instructions[25] = LDURB;
+  instructions[22] = LDURB;
 
   Instruction *MOVZ = malloc(sizeof(Instruction));
   if (MOVZ == NULL)
     return NULL;
-  MOVZ->opcode = (const int[]){1, 1, 0, 1, 0, 0, 1, 0, 1};
+  MOVZ->opcode = (uint32_t)0b11010010100000000000000000000000;
   MOVZ->identify_params = identify_params_MOVZ;
   // agregar funciones
-  instructions[26] = MOVZ;
+  instructions[23] = MOVZ;
 
   return instructions;
 }

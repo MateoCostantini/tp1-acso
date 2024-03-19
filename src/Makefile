@@ -1,5 +1,5 @@
-sim: shell.c sim.c 
-	gcc -g -O0 $^ -o $@
+sim: shell.c sim2.c 
+	gcc -g -O0 $^ -o $@ -lm
 
 .PHONY: clean
 clean:
