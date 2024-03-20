@@ -472,7 +472,7 @@ Instruction **build_instructions() {
     return NULL;
   ADDS_ER->opcode = (uint32_t)0b10101011001000000000000000000000;
   ADDS_ER->identify_params = identify_params_1;
-  // agregar las funciones para esa instruccion en los parametros de la struct
+  ADDS_ER->instruction_function = function_ADDS_ER;
   instructions[0] = ADDS_ER;
 
   Instruction *ADDS_I = malloc(sizeof(Instruction));
@@ -480,7 +480,6 @@ Instruction **build_instructions() {
     return NULL;
   ADDS_I->opcode = (uint32_t)0b10110001000000000000000000000000;
   ADDS_I->opcode_length = 8;
-  // agregar funciones
   ADDS_I->identify_params = identify_params_2;
   ADDS_I->instruction_function = function_ADDS_I;
   instructions[1] = ADDS_I;
@@ -490,7 +489,7 @@ Instruction **build_instructions() {
     return NULL;
   SUBS_CMP_ER->opcode = (uint32_t)0b11101011001000000000000000000000;
   SUBS_CMP_ER->identify_params = identify_params_1;
-  // agregar funciones
+  SUBS_CMP_ER->instruction_function = function_SUBS_CMP_ER;
   instructions[2] = SUBS_CMP_ER;
 
   Instruction *SUBS_CMP_I = malloc(sizeof(Instruction));
@@ -498,7 +497,7 @@ Instruction **build_instructions() {
     return NULL;
   SUBS_CMP_I->opcode = (uint32_t)0b11110001000000000000000000000000;
   SUBS_CMP_I->identify_params = identify_params_2;
-  // agregar funciones
+  SUBS_CMP_I->instruction_function = function_SUBS_CMP_I;
   instructions[3] = SUBS_CMP_I;
 
   Instruction *HLT = malloc(sizeof(Instruction));
@@ -509,7 +508,6 @@ Instruction **build_instructions() {
                                                     // por la consigna
   HLT->identify_params = identify_params_HLT;
   HLT->instruction_function = function_HLT;
-  // agregar funciones
   instructions[4] = HLT;
 
   Instruction *ANDS_SR = malloc(sizeof(Instruction));
@@ -517,7 +515,7 @@ Instruction **build_instructions() {
     return NULL;
   ANDS_SR->opcode = (uint32_t)0b11101010000000000000000000000000;
   ANDS_SR->identify_params = identify_params_1;
-  // agregar funciones
+  ANDS_SR->instruction_function = function_ANDS_SR;
   instructions[5] = ANDS_SR;
 
   Instruction *EOR_SR = malloc(sizeof(Instruction));
@@ -525,7 +523,7 @@ Instruction **build_instructions() {
     return NULL;
   EOR_SR->opcode = (uint32_t)0b11001010000000000000000000000000;
   EOR_SR->identify_params = identify_params_1;
-  // agregar funciones
+  EOR_SR->instruction_function = function_EOR_SR;
   instructions[6] = EOR_SR;
 
   Instruction *ORR_SR = malloc(sizeof(Instruction));
@@ -533,7 +531,7 @@ Instruction **build_instructions() {
     return NULL;
   ORR_SR->opcode = (uint32_t)0b10101010000000000000000000000000;
   ORR_SR->identify_params = identify_params_1;
-  // agregar funciones
+  ORR_SR->instruction_function = function_ORR_SR;
   instructions[7] = ORR_SR;
 
   Instruction *B = malloc(sizeof(Instruction));
@@ -541,7 +539,7 @@ Instruction **build_instructions() {
     return NULL;
   B->opcode = (uint32_t)0b00010100000000000000000000000000;
   B->identify_params = identify_params_B;
-  // agregar funciones
+  B->instruction_function = function_B;
   instructions[8] = B;
 
   Instruction *BR = malloc(sizeof(Instruction));
@@ -549,7 +547,7 @@ Instruction **build_instructions() {
     return NULL;
   BR->opcode = (uint32_t)0b11010110000111110000000000000000;
   BR->identify_params = identify_params_BR;
-  // agregar funciones
+  BR->instruction_function = function_BR;
   instructions[9] = BR;
 
   Instruction *BEQ = malloc(sizeof(Instruction));
@@ -557,7 +555,7 @@ Instruction **build_instructions() {
     return NULL;
   BEQ->opcode = (uint32_t)0b01010100000000000000000000000000;
   BEQ->identify_params = identify_params_Bcond;
-  // agregar funciones
+  BEQ->instruction_function = function_BEQ;
   instructions[10] = BEQ;
 
   Instruction *BNE = malloc(sizeof(Instruction));
@@ -565,7 +563,7 @@ Instruction **build_instructions() {
     return NULL;
   BNE->opcode = (uint32_t)0b01010100000000000000000000000001;
   BNE->identify_params = identify_params_Bcond;
-  // agregar funciones
+  BNE->instruction_function = function_BNE;
   instructions[11] = BNE;
 
   Instruction *BGT = malloc(sizeof(Instruction));
@@ -573,7 +571,7 @@ Instruction **build_instructions() {
     return NULL;
   BGT->opcode = (uint32_t)0b01010100000000000000000000001100;
   BGT->identify_params = identify_params_Bcond;
-  // agregar funciones
+  BGT->instruction_function = function_BGT;
   instructions[12] = BGT;
 
   Instruction *BLT = malloc(sizeof(Instruction));
@@ -581,6 +579,7 @@ Instruction **build_instructions() {
     return NULL;
   BLT->opcode = (uint32_t)0b01010100000000000000000000001011;
   BLT->identify_params = identify_params_Bcond;
+  BLT->instruction_function = function_BLT;
   // agregar funciones
   instructions[13] = BLT;
 
@@ -589,7 +588,7 @@ Instruction **build_instructions() {
     return NULL;
   BGE->opcode = (uint32_t)0b01010100000000000000000000001010;
   BGE->identify_params = identify_params_Bcond;
-  // agregar funciones
+  BGE->instruction_function = function_BGE;
   instructions[14] = BGE;
 
   Instruction *BLE = malloc(sizeof(Instruction));
@@ -597,7 +596,7 @@ Instruction **build_instructions() {
     return NULL;
   BLE->opcode = (uint32_t)0b01010100000000000000000000001101;
   BLE->identify_params = identify_params_Bcond;
-  // agregar funciones
+  BLE->instruction_function = function_BLE;
   instructions[15] = BLE;
 
   Instruction *LSL_LSR_I = malloc(sizeof(Instruction));
@@ -605,7 +604,7 @@ Instruction **build_instructions() {
     return NULL;
   LSL_LSR_I->opcode = (uint32_t)0b11010011000000000000000000000000; // imms
   LSL_LSR_I->identify_params = identify_params_LSL_LSR_I;
-  // agregar funciones
+  LSL_LSR_I->instruction_function = function_LSL_LSR_I;
   instructions[16] = LSL_LSR_I;
 
   Instruction *STUR = malloc(sizeof(Instruction));
@@ -613,7 +612,7 @@ Instruction **build_instructions() {
     return NULL;
   STUR->opcode = (uint32_t)0b11111000000000000000000000000000;
   STUR->identify_params = identify_params_3;
-  // agregar funciones
+  STUR->instruction_function = function_STUR;
   instructions[17] = STUR;
 
   Instruction *STURB = malloc(sizeof(Instruction));
@@ -621,7 +620,7 @@ Instruction **build_instructions() {
     return NULL;
   STURB->opcode = (uint32_t)0b00111000000000000000000000000000;
   STURB->identify_params = identify_params_3;
-  // agregar funciones
+  STURB->instruction_function = function_STURB;
   instructions[18] = STURB;
 
   Instruction *STURH = malloc(sizeof(Instruction));
@@ -629,7 +628,7 @@ Instruction **build_instructions() {
     return NULL;
   STURH->opcode = (uint32_t)0b01111000000000000000000000000000;
   STURH->identify_params = identify_params_3;
-  // agregar funciones
+  STURH->instruction_function = function_STURH;
   instructions[19] = STURH;
 
   Instruction *LDUR = malloc(sizeof(Instruction));
@@ -637,7 +636,7 @@ Instruction **build_instructions() {
     return NULL;
   LDUR->opcode = (uint32_t)0b11111000010000000000000000000000;
   LDUR->identify_params = identify_params_3;
-  // agregar funciones
+  LDUR->instruction_function = function_LDUR;
   instructions[20] = LDUR;
 
   Instruction *LDURH = malloc(sizeof(Instruction));
@@ -645,7 +644,7 @@ Instruction **build_instructions() {
     return NULL;
   LDURH->opcode = (uint32_t)0b01111000010000000000000000000000;
   LDURH->identify_params = identify_params_3;
-  // agregar funciones
+  LDURH->instruction_function = function_LDURH;
   instructions[21] = LDURH;
 
   Instruction *LDURB = malloc(sizeof(Instruction));
@@ -653,7 +652,7 @@ Instruction **build_instructions() {
     return NULL;
   LDURB->opcode = (uint32_t)0b00111000010000000000000000000000;
   LDURB->identify_params = identify_params_3;
-  // agregar funciones
+  LDURB->instruction_function = function_LDURB;
   instructions[22] = LDURB;
 
   Instruction *MOVZ = malloc(sizeof(Instruction));
@@ -661,7 +660,7 @@ Instruction **build_instructions() {
     return NULL;
   MOVZ->opcode = (uint32_t)0b11010010100000000000000000000000;
   MOVZ->identify_params = identify_params_MOVZ;
-  // agregar funciones
+  MOVZ->instruction_function = function_MOVZ;
   instructions[23] = MOVZ;
 
   return instructions;
