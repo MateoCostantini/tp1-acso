@@ -3,7 +3,7 @@
 #include <string.h>
 #include <stdbool.h>
 #include "instructions2.c"
-#define NUMBER_INSTRUCTIONS 23
+#define NUMBER_INSTRUCTIONS 24
 
 /*
 typedef struct {
@@ -38,16 +38,18 @@ typedef struct {
 
 Instruction* identify_instruction(uint32_t instruction_base, Instruction** instructions) {
   uint32_t masks[] = {
-      0b11111111111000000000000000000000,
-      0b11111111000000000000000000001111,
-      0b11111111000000000000000000000000, // entraria BEQ, hacer if != a opcode bcond
-      0b11111100000000000000000000000000,
+      0b11111111000000000000000000001111, 
       0b11111111111111111111110000000000,
-      0b11111111100000000000000000000000}; // entraria al imms 00000, hacer if
+      0b11111111111000000000000000000000,
+      0b11111111100000000000000000000000,
+      0b11111111000000000000000000000000, 
+      0b11111100000000000000000000000000,
+      }; 
   for (size_t i = 0; i < 6; i++){
       uint32_t opcode_elegible = masks[i] & instruction_base;
       for (size_t j = 0; j < NUMBER_INSTRUCTIONS; j++){
         if (instructions[j]->opcode == opcode_elegible){
+          printf("\nINSTRUCCION: %ld\n", j);
           return instructions[j];
         }
       }

@@ -8,7 +8,6 @@
 
 typedef struct {
   uint32_t opcode;
-  int opcode_length;
   void (*instruction_function)(int *);
   int *(*identify_params)(uint32_t);
 } Instruction;
@@ -42,7 +41,14 @@ void update_flags(int n) {
 // revisar esto bien
 int64_t sign_extend(int64_t n, int n_bits) {
   int64_t mask = (int64_t)1 << (n_bits - 1);
+  n = n & (((int64_t)1 << n_bits) - 1);
+  return (n ^ mask) - mask;
+}
+
+int32_t sign_extend32(int32_t n, int n_bits) {
+  int32_t mask = (int32_t)1 << (n_bits - 1);
   n = n & ((1 << n_bits) - 1);
+
   return (n ^ mask) - mask;
 }
 
@@ -186,6 +192,7 @@ int *identify_params_3(uint32_t instruction_base) {
 }
 
 int *identify_params_MOVZ(uint32_t instruction_base) {
+  printf("entre a identify params movz\n\n");
   uint32_t masks[] = {0b00000000000111111111111111100000,
                       0b00000000000000000000000000011111};
   int *params = (int *)calloc(2, sizeof(int));
@@ -220,8 +227,8 @@ void function_ADDS_I(int *params) {
   NEXT_STATE.PC += 4;
 }
 
-void function_SUBS_CMP_ER(
-    int *params) { // subs_er el bit 21 de output es 0, no 1
+void function_SUBS_CMP_ER(int *params) {
+  // subs_er el bit 21 de output es 0, no 1
   int x1 = CURRENT_STATE.REGS[params[1]];
   int x2 = CURRENT_STATE.REGS[params[0]];
   int x0 = x1 - x2;
@@ -250,6 +257,7 @@ void function_SUBS_CMP_I(int *params) {
 
 void function_HLT(int *params) {
   RUN_BIT = 0; // habria que chequear params?
+  NEXT_STATE.PC += 4;
 }
 
 void function_ANDS_SR(int *params) {
@@ -280,55 +288,62 @@ void function_ORR_SR(int *params) { // aclaracion: no actualiza flags
 }
 
 void function_B(int *params) { // no entiendo la aclaracion de la consigna
-  int offset = (params[0] - CURRENT_STATE.PC) / 4; // signed
-  NEXT_STATE.PC += offset;
+  int32_t imms = sign_extend32(params[0], 26);
+  int offset = (imms) * 4; // signed
+  NEXT_STATE.PC += offset; // chequear
 }
 
 void function_BR(int *params) { NEXT_STATE.PC = CURRENT_STATE.REGS[params[0]]; }
 
 void function_BEQ(int *params) {
+  int32_t imms = sign_extend32(params[0], 19);
   if (CURRENT_STATE.FLAG_Z == 1) {
-    NEXT_STATE.PC = params[0];
+    NEXT_STATE.PC += (imms) * 4;
   } else {
     NEXT_STATE.PC += 4;
   }
 }
 
 void function_BNE(int *params) {
+  int32_t imms = sign_extend32(params[0], 19);
   if (CURRENT_STATE.FLAG_Z == 0) {
-    NEXT_STATE.PC = params[0];
+    NEXT_STATE.PC += imms * 4;
   } else {
     NEXT_STATE.PC += 4;
   }
 }
 
 void function_BGT(int *params) {
+  int32_t imms = sign_extend32(params[0], 19);
   if (CURRENT_STATE.FLAG_Z == 0 && CURRENT_STATE.FLAG_N == 0) {
-    NEXT_STATE.PC = params[0];
+    NEXT_STATE.PC = imms * 4;
   } else {
     NEXT_STATE.PC += 4;
   }
 }
 
 void function_BLT(int *params) {
-  if (CURRENT_STATE.FLAG_N != 0) {
-    NEXT_STATE.PC = params[0];
+  if (CURRENT_STATE.FLAG_N == 1) {
+    int32_t imms = sign_extend32(params[0], 19);
+    NEXT_STATE.PC = imms * 4;
   } else {
     NEXT_STATE.PC += 4;
   }
 }
 
 void function_BGE(int *params) {
+  int32_t imms = sign_extend32(params[0], 19);
   if (CURRENT_STATE.FLAG_N == 0) {
-    NEXT_STATE.PC = params[0];
+    NEXT_STATE.PC = imms * 4;
   } else {
     NEXT_STATE.PC += 4;
   }
 }
 
 void function_BLE(int *params) {
+  int32_t imms = sign_extend32(params[0], 19);
   if (!(CURRENT_STATE.FLAG_N == 0 && CURRENT_STATE.FLAG_Z == 0)) {
-    NEXT_STATE.PC = params[0];
+    NEXT_STATE.PC = imms * 4;
   } else {
     NEXT_STATE.PC += 4;
   }
@@ -369,12 +384,15 @@ void function_STURB(int *params) {
 
   uint32_t least_sig_byte =
       value & 0xFF; // asumiendo que quiere los menos significativos
-  uint32_t shifted = least_sig_byte << 24;
+  uint32_t shifted = least_sig_byte; // << 24;
   address = address + offset;
-  uint32_t saved = mem_read(address);
-  saved &= 0x00FFFFFF;
-  saved |= shifted;
-
+  uint32_t saved = mem_read_32(address);
+  saved &= 0xFFFFFF00;
+  saved |= shifted; // cambiar nombre a shifted
+  printf("\naddress: %lx\n", address);
+  printf("\nsaved: %x\n", saved);
+  printf("\nshifted: %x\n", shifted);
+  printf("\noffset: %lx\n", offset);
   mem_write_32(address, saved);
   NEXT_STATE.PC += 4;
 }
@@ -391,7 +409,7 @@ void function_STURH(int *params) {
       value & 0xFFFF; // asumiendo que quiere los menos significativos
   uint32_t shifted = least_sig_2bytes << 16;
   address = address + offset;
-  uint32_t saved = mem_read(address);
+  uint32_t saved = mem_read_32(address);
   saved &= 0x0000FFFF;
   saved |= shifted;
 
@@ -409,10 +427,14 @@ void function_LDUR(int *params) {
 
   address = address + offset;
 
-  uint32_t saved = mem_read_32(address);
+  uint32_t lower = mem_read_32(address);
 
-  NEXT_STATE.REGS[params[2]] = saved;
+  uint32_t upper = mem_read_32(address + 4);
+  int64_t combined = ((int64_t)upper << 32) | lower;
+
+  NEXT_STATE.REGS[params[2]] = combined;
   NEXT_STATE.PC += 4;
+
 }
 
 void function_LDURB(int *params) {
@@ -452,6 +474,7 @@ void function_LDURH(int *params) {
 }
 
 void function_MOVZ(int *params) {
+  printf("entre a movz\n\n");
   int imm = params[0]; // ver tipo
   NEXT_STATE.REGS[params[1]] = imm;
   NEXT_STATE.PC += 4;
@@ -470,7 +493,7 @@ Instruction **build_instructions() {
   Instruction *ADDS_ER = malloc(sizeof(Instruction));
   if (ADDS_ER == NULL)
     return NULL;
-  ADDS_ER->opcode = (uint32_t)0b10101011001000000000000000000000;
+  ADDS_ER->opcode = (uint32_t)0b10101011000000000000000000000000;
   ADDS_ER->identify_params = identify_params_1;
   ADDS_ER->instruction_function = function_ADDS_ER;
   instructions[0] = ADDS_ER;
@@ -479,7 +502,6 @@ Instruction **build_instructions() {
   if (ADDS_I == NULL)
     return NULL;
   ADDS_I->opcode = (uint32_t)0b10110001000000000000000000000000;
-  ADDS_I->opcode_length = 8;
   ADDS_I->identify_params = identify_params_2;
   ADDS_I->instruction_function = function_ADDS_I;
   instructions[1] = ADDS_I;
@@ -487,7 +509,7 @@ Instruction **build_instructions() {
   Instruction *SUBS_CMP_ER = malloc(sizeof(Instruction));
   if (SUBS_CMP_ER == NULL)
     return NULL;
-  SUBS_CMP_ER->opcode = (uint32_t)0b11101011001000000000000000000000;
+  SUBS_CMP_ER->opcode = (uint32_t)0b11101011000000000000000000000000;
   SUBS_CMP_ER->identify_params = identify_params_1;
   SUBS_CMP_ER->instruction_function = function_SUBS_CMP_ER;
   instructions[2] = SUBS_CMP_ER;
