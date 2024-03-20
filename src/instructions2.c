@@ -384,15 +384,10 @@ void function_STURB(int *params) {
 
   uint32_t least_sig_byte =
       value & 0xFF; // asumiendo que quiere los menos significativos
-  uint32_t shifted = least_sig_byte; // << 24;
   address = address + offset;
   uint32_t saved = mem_read_32(address);
   saved &= 0xFFFFFF00;
-  saved |= shifted; // cambiar nombre a shifted
-  printf("\naddress: %lx\n", address);
-  printf("\nsaved: %x\n", saved);
-  printf("\nshifted: %x\n", shifted);
-  printf("\noffset: %lx\n", offset);
+  saved |= least_sig_byte;
   mem_write_32(address, saved);
   NEXT_STATE.PC += 4;
 }
@@ -407,11 +402,10 @@ void function_STURH(int *params) {
 
   uint32_t least_sig_2bytes =
       value & 0xFFFF; // asumiendo que quiere los menos significativos
-  uint32_t shifted = least_sig_2bytes << 16;
   address = address + offset;
   uint32_t saved = mem_read_32(address);
-  saved &= 0x0000FFFF;
-  saved |= shifted;
+  saved &= 0xFFFF0000;
+  saved |= least_sig_2bytes;
 
   mem_write_32(address, saved);
   NEXT_STATE.PC += 4;
@@ -428,7 +422,6 @@ void function_LDUR(int *params) {
   address = address + offset;
 
   uint32_t lower = mem_read_32(address);
-
   uint32_t upper = mem_read_32(address + 4);
   int64_t combined = ((int64_t)upper << 32) | lower;
 
