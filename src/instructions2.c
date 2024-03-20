@@ -41,9 +41,9 @@ void update_flags(int n) {
 
 // revisar esto bien
 int64_t sign_extend(int64_t n, int n_bits) {
-    int64_t mask = (int64_t)1 << (n_bits - 1);
-    n = n & ((1 << n_bits) - 1);
-    return (n ^ mask) - mask;
+  int64_t mask = (int64_t)1 << (n_bits - 1);
+  n = n & ((1 << n_bits) - 1);
+  return (n ^ mask) - mask;
 }
 
 int *identify_params_1(
@@ -155,9 +155,24 @@ int *identify_params_Bcond(
   return params;
 }
 
+int *identify_params_LSL_LSR_I(uint32_t instruction_base) {
+  uint32_t masks[] = {
+      0b00000000001111110000000000000000, 0b00000000000000001111110000000000,
+      0b00000000000000000000001111100000, 0b00000000000000000000000000011111};
+  int *params = (int *)calloc(4, sizeof(int));
+  if (params == NULL) {
+    return NULL;
+  }
+  params[0] = (masks[0] & instruction_base) >> 16;
+  params[1] = (masks[1] & instruction_base) >> 10;
+  params[2] = (masks[2] & instruction_base) >> 5;
+  params[3] = masks[3] & instruction_base;
+  return params;
+}
+
 int *identify_params_3(uint32_t instruction_base) {
-  // sirve para LSR, LSL, STUR, STURB, STURH, LDUR, LDURH, LDURB
-  uint32_t masks[] = {0b00000000000111111111000000000000,
+  // sirve para STUR, STURB, STURH, LDUR, LDURH, LDURB
+  uint32_t masks[] = {0b00000000000111111111000000000000, // chequear
                       0b00000000000000000000001111100000,
                       0b00000000000000000000000000011111};
   int *params = (int *)calloc(3, sizeof(int));
@@ -171,21 +186,16 @@ int *identify_params_3(uint32_t instruction_base) {
 }
 
 int *identify_params_MOVZ(uint32_t instruction_base) {
-  uint32_t masks[] = {0b00000000000000000000000000011111};
-  int *params = (int *)calloc(1, sizeof(int));
+  uint32_t masks[] = {0b00000000000111111111111111100000,
+                      0b00000000000000000000000000011111};
+  int *params = (int *)calloc(2, sizeof(int));
   if (params == NULL) {
     return NULL;
   }
-  params[0] = masks[0] & instruction_base;
+  params[0] = (masks[0] & instruction_base) >> 5;
+  params[1] = masks[1] & instruction_base;
   return params;
 }
-
-
-
-
-
-
-
 
 void function_ADDS_ER(int *params) { // el bit 21 de output es 0, no 1
   int x1 = CURRENT_STATE.REGS[params[1]];
@@ -324,15 +334,27 @@ void function_BLE(int *params) {
   }
 }
 
+void function_LSL_LSR_I(int *params) {
+  int x1 = CURRENT_STATE.REGS[params[2]];
+  int shift = params[0];
+  if (params[1] == 0b111111) {
+    NEXT_STATE.REGS[params[3]] = x1 >> shift;
+  } else {
+    NEXT_STATE.REGS[params[3]] = x1 << shift;
+  }
+  NEXT_STATE.PC += 4;
+}
+
 void function_STUR(int *params) {
   int value = CURRENT_STATE.REGS[params[2]];
   int address = CURRENT_STATE.REGS[params[1]];
   int64_t offset = sign_extend(params[0], 9);
 
-  if (address == 31) return; // ver que hacemos si el address es 31
+  if (address == 31)
+    return; // ver que hacemos si el address es 31
 
   address = address + offset;
-  
+
   mem_write_32(address, value);
   NEXT_STATE.PC += 4;
 }
@@ -342,9 +364,11 @@ void function_STURB(int *params) {
   int64_t address = CURRENT_STATE.REGS[params[1]];
   int64_t offset = sign_extend(params[0], 9);
 
-  if (address == 31) return; // ver que hacemos si el address es 31
+  if (address == 31)
+    return; // ver que hacemos si el address es 31
 
-  uint32_t least_sig_byte = value & 0xFF; // asumiendo que quiere los menos significativos
+  uint32_t least_sig_byte =
+      value & 0xFF; // asumiendo que quiere los menos significativos
   uint32_t shifted = least_sig_byte << 24;
   address = address + offset;
   uint32_t saved = mem_read(address);
@@ -360,9 +384,11 @@ void function_STURH(int *params) {
   int64_t address = CURRENT_STATE.REGS[params[1]];
   int64_t offset = sign_extend(params[0], 9);
 
-  if (address == 31) return; // ver que hacemos si el address es 31
+  if (address == 31)
+    return; // ver que hacemos si el address es 31
 
-  uint32_t least_sig_2bytes = value & 0xFFFF; // asumiendo que quiere los menos significativos
+  uint32_t least_sig_2bytes =
+      value & 0xFFFF; // asumiendo que quiere los menos significativos
   uint32_t shifted = least_sig_2bytes << 16;
   address = address + offset;
   uint32_t saved = mem_read(address);
@@ -378,10 +404,11 @@ void function_LDUR(int *params) {
   int address = CURRENT_STATE.REGS[params[1]];
   int64_t offset = sign_extend(params[0], 9);
 
-  if (address == 31) return; // ver que hacemos si el address es 31
+  if (address == 31)
+    return; // ver que hacemos si el address es 31
 
   address = address + offset;
-  
+
   uint32_t saved = mem_read_32(address);
 
   NEXT_STATE.REGS[params[2]] = saved;
@@ -393,10 +420,11 @@ void function_LDURB(int *params) {
   int address = CURRENT_STATE.REGS[params[1]];
   int64_t offset = sign_extend(params[0], 9);
 
-  if (address == 31) return; // ver que hacemos si el address es 31
+  if (address == 31)
+    return; // ver que hacemos si el address es 31
 
   address = address + offset;
-  
+
   uint32_t saved = mem_read_32(address);
 
   int first_byte = saved & 0xFF;
@@ -410,15 +438,22 @@ void function_LDURH(int *params) {
   int address = CURRENT_STATE.REGS[params[1]];
   int64_t offset = sign_extend(params[0], 9);
 
-  if (address == 31) return; // ver que hacemos si el address es 31
+  if (address == 31)
+    return; // ver que hacemos si el address es 31
 
   address = address + offset;
-  
+
   uint32_t saved = mem_read_32(address);
 
   int first2_bytes = saved & 0xFFFF;
 
   NEXT_STATE.REGS[params[2]] = first2_bytes;
+  NEXT_STATE.PC += 4;
+}
+
+void function_MOVZ(int *params) {
+  int imm = params[0]; // ver tipo
+  NEXT_STATE.REGS[params[1]] = imm;
   NEXT_STATE.PC += 4;
 }
 
@@ -569,7 +604,7 @@ Instruction **build_instructions() {
   if (LSL_LSR_I == NULL)
     return NULL;
   LSL_LSR_I->opcode = (uint32_t)0b11010011000000000000000000000000; // imms
-  LSL_LSR_I->identify_params = identify_params_3;
+  LSL_LSR_I->identify_params = identify_params_LSL_LSR_I;
   // agregar funciones
   instructions[16] = LSL_LSR_I;
 
