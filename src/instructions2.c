@@ -59,10 +59,8 @@ int *identify_params_1(
 int *identify_params_2(uint32_t instruction_base) {
   // sirve para ADDS_I, SUBS_I
   uint32_t masks[] = {
-      0b00000000110000000000000000000000, 
-      0b00000000001111111111110000000000,
-      0b00000000000000000000001111100000, 
-      0b00000000000000000000000000011111};
+      0b00000000110000000000000000000000, 0b00000000001111111111110000000000,
+      0b00000000000000000000001111100000, 0b00000000000000000000000000011111};
   int *params = (int *)calloc(4, sizeof(int));
   if (params == NULL) {
     return NULL;
@@ -175,7 +173,14 @@ int *identify_params_MOVZ(uint32_t instruction_base) {
   return params;
 }
 
-void function_ADDS_ER(int *params) {
+
+
+
+
+
+
+
+void function_ADDS_ER(int *params) { // el bit 21 de output es 0, no 1
   int x1 = CURRENT_STATE.REGS[params[1]];
   int x2 = CURRENT_STATE.REGS[params[0]];
   int x0 = x1 + x2;
@@ -198,7 +203,8 @@ void function_ADDS_I(int *params) {
   NEXT_STATE.PC += 4;
 }
 
-void function_SUBS_CMP_ER(int *params) {
+void function_SUBS_CMP_ER(
+    int *params) { // subs_er el bit 21 de output es 0, no 1
   int x1 = CURRENT_STATE.REGS[params[1]];
   int x2 = CURRENT_STATE.REGS[params[0]];
   int x0 = x1 - x2;
@@ -234,22 +240,82 @@ void function_ANDS_SR(int *params) {
   // usemos. (igual para eor)
   int x1 = CURRENT_STATE.REGS[params[1]];
   int x2 = CURRENT_STATE.REGS[params[0]];
-  // Completar...
+  int x0 = x1 & x2;
+  update_flags(x0);
+  NEXT_STATE.REGS[params[2]] = x0; // tiene que ser con 64 bits
+  NEXT_STATE.PC += 4;
 }
 
-void function_EOR_SR(int *params) {
+void function_EOR_SR(int *params) { // aclaracion: no actualiza flags
   int x1 = CURRENT_STATE.REGS[params[1]];
   int x2 = CURRENT_STATE.REGS[params[0]];
-
-  // completar
+  int x0 = x1 ^ x2;
+  NEXT_STATE.REGS[params[2]] = x0; // tiene que ser con 64 bits
+  NEXT_STATE.PC += 4;
 }
 
-void function_ORR_SR(int *params) {
+void function_ORR_SR(int *params) { // aclaracion: no actualiza flags
   int x1 = CURRENT_STATE.REGS[params[1]];
   int x2 = CURRENT_STATE.REGS[params[0]];
+  int x0 = x1 | x2;
+  NEXT_STATE.REGS[params[2]] = x0; // tiene que ser con 64 bits
+  NEXT_STATE.PC += 4;
 }
 
-void function_B(int *params) {}
+void function_B(int *params) { // no entiendo la aclaracion de la consigna
+  int offset = (params[0] - CURRENT_STATE.PC) / 4; // signed
+  NEXT_STATE.PC += offset;
+}
+
+void function_BR(int *params) { NEXT_STATE.PC = CURRENT_STATE.REGS[params[0]]; }
+
+void function_BEQ(int *params) {
+  if (CURRENT_STATE.FLAG_Z == 1) {
+    NEXT_STATE.PC = params[0];
+  } else {
+    NEXT_STATE.PC += 4;
+  }
+}
+
+void function_BNE(int *params) {
+  if (CURRENT_STATE.FLAG_Z == 0) {
+    NEXT_STATE.PC = params[0];
+  } else {
+    NEXT_STATE.PC += 4;
+  }
+}
+
+void function_BGT(int *params) {
+  if (CURRENT_STATE.FLAG_Z == 0 && CURRENT_STATE.FLAG_N == 0) {
+    NEXT_STATE.PC = params[0];
+  } else {
+    NEXT_STATE.PC += 4;
+  }
+}
+
+void function_BLT(int *params) {
+  if (CURRENT_STATE.FLAG_N != 0) {
+    NEXT_STATE.PC = params[0];
+  } else {
+    NEXT_STATE.PC += 4;
+  }
+}
+
+void function_BGE(int *params) {
+  if (CURRENT_STATE.FLAG_N == 0) {
+    NEXT_STATE.PC = params[0];
+  } else {
+    NEXT_STATE.PC += 4;
+  }
+}
+
+void function_BLE(int *params) {
+  if (!(CURRENT_STATE.FLAG_N == 0 && CURRENT_STATE.FLAG_Z == 0)) {
+    NEXT_STATE.PC = params[0];
+  } else {
+    NEXT_STATE.PC += 4;
+  }
+}
 
 // definir cada instruccion con su opcode
 Instruction **build_instructions() {
