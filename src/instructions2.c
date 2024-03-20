@@ -39,6 +39,13 @@ void update_flags(int n) {
   }
 }
 
+// revisar esto bien
+int64_t sign_extend(int64_t n, int n_bits) {
+    int64_t mask = (int64_t)1 << (n_bits - 1);
+    n = n & ((1 << n_bits) - 1);
+    return (n ^ mask) - mask;
+}
+
 int *identify_params_1(
     uint32_t instruction_base) { // chequear si el opction y imm3
                                  // hay que ponerlo como param
@@ -315,6 +322,104 @@ void function_BLE(int *params) {
   } else {
     NEXT_STATE.PC += 4;
   }
+}
+
+void function_STUR(int *params) {
+  int value = CURRENT_STATE.REGS[params[2]];
+  int address = CURRENT_STATE.REGS[params[1]];
+  int64_t offset = sign_extend(params[0], 9);
+
+  if (address == 31) return; // ver que hacemos si el address es 31
+
+  address = address + offset;
+  
+  mem_write_32(address, value);
+  NEXT_STATE.PC += 4;
+}
+
+void function_STURB(int *params) {
+  int value = CURRENT_STATE.REGS[params[2]];
+  int64_t address = CURRENT_STATE.REGS[params[1]];
+  int64_t offset = sign_extend(params[0], 9);
+
+  if (address == 31) return; // ver que hacemos si el address es 31
+
+  uint32_t least_sig_byte = value & 0xFF; // asumiendo que quiere los menos significativos
+  uint32_t shifted = least_sig_byte << 24;
+  address = address + offset;
+  uint32_t saved = mem_read(address);
+  saved &= 0x00FFFFFF;
+  saved |= shifted;
+
+  mem_write_32(address, saved);
+  NEXT_STATE.PC += 4;
+}
+
+void function_STURH(int *params) {
+  int value = CURRENT_STATE.REGS[params[2]];
+  int64_t address = CURRENT_STATE.REGS[params[1]];
+  int64_t offset = sign_extend(params[0], 9);
+
+  if (address == 31) return; // ver que hacemos si el address es 31
+
+  uint32_t least_sig_2bytes = value & 0xFFFF; // asumiendo que quiere los menos significativos
+  uint32_t shifted = least_sig_2bytes << 16;
+  address = address + offset;
+  uint32_t saved = mem_read(address);
+  saved &= 0x0000FFFF;
+  saved |= shifted;
+
+  mem_write_32(address, saved);
+  NEXT_STATE.PC += 4;
+}
+
+void function_LDUR(int *params) {
+  int value = CURRENT_STATE.REGS[params[2]];
+  int address = CURRENT_STATE.REGS[params[1]];
+  int64_t offset = sign_extend(params[0], 9);
+
+  if (address == 31) return; // ver que hacemos si el address es 31
+
+  address = address + offset;
+  
+  uint32_t saved = mem_read_32(address);
+
+  NEXT_STATE.REGS[params[2]] = saved;
+  NEXT_STATE.PC += 4;
+}
+
+void function_LDURB(int *params) {
+  int value = CURRENT_STATE.REGS[params[2]];
+  int address = CURRENT_STATE.REGS[params[1]];
+  int64_t offset = sign_extend(params[0], 9);
+
+  if (address == 31) return; // ver que hacemos si el address es 31
+
+  address = address + offset;
+  
+  uint32_t saved = mem_read_32(address);
+
+  int first_byte = saved & 0xFF;
+
+  NEXT_STATE.REGS[params[2]] = first_byte;
+  NEXT_STATE.PC += 4;
+}
+
+void function_LDURH(int *params) {
+  int value = CURRENT_STATE.REGS[params[2]];
+  int address = CURRENT_STATE.REGS[params[1]];
+  int64_t offset = sign_extend(params[0], 9);
+
+  if (address == 31) return; // ver que hacemos si el address es 31
+
+  address = address + offset;
+  
+  uint32_t saved = mem_read_32(address);
+
+  int first2_bytes = saved & 0xFFFF;
+
+  NEXT_STATE.REGS[params[2]] = first2_bytes;
+  NEXT_STATE.PC += 4;
 }
 
 // definir cada instruccion con su opcode
