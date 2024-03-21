@@ -65,7 +65,7 @@ void process_instruction() {
     Returns:
         None.
   */
-  Instruction** instructions_list = build_instructions(); // que se haga solo una vez
+  Instruction** instructions_list = build_instructions();
   uint32_t instruction = mem_read_32(CURRENT_STATE.PC);
   Instruction* chosen_instruction = identify_instruction(instruction, instructions_list);
   execute(instruction, chosen_instruction);

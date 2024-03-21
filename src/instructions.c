@@ -3,31 +3,26 @@
 #include <stdio.h>
 #include <stdlib.h>
 
-// agergar al makefile
-// falta tambien definir el length del opcode para cada instruccion
-
 typedef struct {
   uint32_t opcode;
   void (*instruction_function)(int *);
   int *(*identify_params)(uint32_t);
 } Instruction;
 
-// me agarro la duda si la forma de acceder a los registros y memoria es con int
-// binario y no decimal!!
-
-// Hay funciones que se repiten (son iguales) habria que sacar las repetidas y
-// generalizar
-
-// habria que inicializar params como arreglos de 0s xq sino sumaria cualquier
-// cosa
-
-// los contenidos de los registros en que base?
-
-// El PC esta en bytes o bits para ver si sumarle 4 o 32
-
-// sacar prints
-
 void update_flags(int n) {
+  /*
+  Updates the flags Z and N based on the number n.
+  If n is a negative, the flag N is 1 and Z is 0
+  If n is 0, the flag Z is 1 and N is 0
+  Else, both flags are 0.
+
+  params:
+    n: the number to update the flags to
+
+  returns:
+    None
+  */ 
+
   if (n == 0) {
     NEXT_STATE.FLAG_Z = 1;
     NEXT_STATE.FLAG_N = 0;
@@ -40,24 +35,53 @@ void update_flags(int n) {
   }
 }
 
-// revisar esto bien
+
 int64_t sign_extend(int64_t n, int n_bits) {
+  /*
+  Extends a number n from n_bits to 64 bits
+
+  params:
+    n: a n_bits long number
+    n_bits: lenght to convert from
+
+  returns:
+    (n ^ mask) - mask: n extended to 64 bits with its corresponding sign
+  */
+
   int64_t mask = (int64_t)1 << (n_bits - 1);
   n = n & (((int64_t)1 << n_bits) - 1);
   return (n ^ mask) - mask;
 }
 
 int32_t sign_extend32(int32_t n, int n_bits) {
+  /*
+  Extends a number n from n_bits to 32 bits
+
+  params:
+    n: a n_bits long number
+    n_bits: lenght to convert from
+
+  returns:
+    (n ^ mask) - mask: n extended to 32 bits with its corresponding sign
+  */
   int32_t mask = (int32_t)1 << (n_bits - 1);
   n = n & ((1 << n_bits) - 1);
 
   return (n ^ mask) - mask;
 }
 
-int *identify_params_1(
-    uint32_t instruction_base) { // chequear si el opction y imm3
-                                 // hay que ponerlo como param
-  // sirve para ADDS_ER, SUBS_ER, ANDS_SR, EOR_SR, ORR_SR
+int *identify_params_1(uint32_t instruction_base) { 
+  /*
+  Identifies the parameters for the functions: ADDS_ER, 
+  SUBS_CMP_ER, ANDS_SR, EOR_SR and ORR_SR
+
+  params:
+    instruction_base: the instruction to identify parameters from
+
+  returns:
+    None
+  */ 
+
   uint32_t masks[] = {0b00000000000111110000000000000000,
                       0b00000000000000000000001111100000,
                       0b00000000000000000000000000011111};
@@ -72,7 +96,17 @@ int *identify_params_1(
 }
 
 int *identify_params_2(uint32_t instruction_base) {
-  // sirve para ADDS_I, SUBS_I
+  /*
+  Identifies the parameters for the functions: ADDS_I, 
+  and SUBS_CMP_I
+
+  params:
+    instruction_base: the instruction to identify parameters from
+
+  returns:
+    params: every parameter needed to run the instruction properly
+  */
+
   uint32_t masks[] = {
       0b00000000110000000000000000000000, 0b00000000001111111111110000000000,
       0b00000000000000000000001111100000, 0b00000000000000000000000000011111};
@@ -88,6 +122,16 @@ int *identify_params_2(uint32_t instruction_base) {
 }
 
 int *identify_params_HLT(uint32_t instruction_base) {
+  /*
+  Identifies the parameters for the function HLT
+
+  params:
+    instruction_base: the instruction to identify parameters from
+
+  returns:
+    params: every parameter needed to run the instruction properly
+  */
+
   uint32_t masks[] = {0b00000000000111111111111111100000};
   int *params = (int *)calloc(1, sizeof(int));
   if (params == NULL) {
@@ -97,36 +141,16 @@ int *identify_params_HLT(uint32_t instruction_base) {
   return params;
 }
 
-/*int *identify_params_CMP_ER(uint32_t instruction_base) {
-  uint32_t masks[] = {0b00000000000111110000000000000000,
-                      0b00000000000000000000001111100000};
-  int *params = (int *)calloc(2, sizeof(int));
-  if (params == NULL) {
-    return NULL;
-  }
-  params[0] = (masks[0] & instruction_base) >> 16;
-  params[1] = (masks[1] & instruction_base) >> 5;
-  return params;
-}*/
-
-/*int *identify_params_CMP_I(
-  uint32_t instruction_base) { // se podria unificar con identify 2
-  uint32_t masks[] = {
-      0b00000000110000000000000000000000,
-      0b00000000001111111111110000000000,
-      0b00000000000000000000001111100000,
-  };
-  int *params = (int *)calloc(3, sizeof(int));
-  if (params == NULL) {
-    return NULL;
-  }
-  params[0] = (masks[0] & instruction_base) >> 22;
-  params[1] = (masks[1] & instruction_base) >> 10;
-  params[2] = (masks[2] & instruction_base) >> 5;
-  return params;
-}*/
-
 int *identify_params_B(uint32_t instruction_base) {
+  /*
+  Identifies the parameters for the function B
+
+  params:
+    instruction_base: the instruction to identify parameters from
+
+  returns:
+    params: every parameter needed to run the instruction properly
+  */ 
   uint32_t masks[] = {
       0b00000011111111111111111111111111,
   };
@@ -139,6 +163,15 @@ int *identify_params_B(uint32_t instruction_base) {
 }
 
 int *identify_params_BR(uint32_t instruction_base) {
+  /*
+  Identifies the parameters for the function BR
+
+  params:
+    instruction_base: the instruction to identify parameters from
+
+  returns:
+    params: every parameter needed to run the instruction properly
+  */
   uint32_t masks[] = {
       0b00000000000000000000001111100000,
   };
@@ -150,8 +183,17 @@ int *identify_params_BR(uint32_t instruction_base) {
   return params;
 }
 
-int *identify_params_Bcond(
-    uint32_t instruction_base) { // tiene imm19 de parametro
+int *identify_params_Bcond(uint32_t instruction_base) {
+  /*
+  Identifies the parameters for the function B.cond
+
+  params:
+    instruction_base: the instruction to identify parameters from
+
+  returns:
+    params: every parameter needed to run the instruction properly
+  */ 
+
   uint32_t masks[] = {
       0b00000000111111111111111111100000,
   };
@@ -164,6 +206,16 @@ int *identify_params_Bcond(
 }
 
 int *identify_params_LSL_LSR_I(uint32_t instruction_base) {
+  /*
+  Identifies the parameters for the function LSL_LSR_I
+
+  params:
+    instruction_base: the instruction to identify parameters from
+
+  returns:
+    params: every parameter needed to run the instruction properly
+  */ 
+
   uint32_t masks[] = {
       0b00000000001111110000000000000000, 0b00000000000000001111110000000000,
       0b00000000000000000000001111100000, 0b00000000000000000000000000011111};
@@ -179,8 +231,18 @@ int *identify_params_LSL_LSR_I(uint32_t instruction_base) {
 }
 
 int *identify_params_3(uint32_t instruction_base) {
-  // sirve para STUR, STURB, STURH, LDUR, LDURH, LDURB
-  uint32_t masks[] = {0b00000000000111111111000000000000, // chequear
+  /*
+  Identifies the parameters for the functions: STUR,
+  STURB, STURH, LDUR, LDURH and LDURB
+
+  params:
+    instruction_base: the instruction to identify parameters from
+
+  returns:
+    params: every parameter needed to run the instruction properly
+  */ 
+
+  uint32_t masks[] = {0b00000000000111111111000000000000,
                       0b00000000000000000000001111100000,
                       0b00000000000000000000000000011111};
   int *params = (int *)calloc(3, sizeof(int));
@@ -194,7 +256,16 @@ int *identify_params_3(uint32_t instruction_base) {
 }
 
 int *identify_params_MOVZ(uint32_t instruction_base) {
-  printf("entre a identify params movz\n\n");
+  /*
+  Identifies the parameters for the function MOVZ
+
+  params:
+    instruction_base: the instruction to identify parameters from
+
+  returns:
+    params: every parameter needed to run the instruction properly
+  */ 
+
   uint32_t masks[] = {0b00000000000111111111111111100000,
                       0b00000000000000000000000000011111};
   int *params = (int *)calloc(2, sizeof(int));
@@ -206,7 +277,17 @@ int *identify_params_MOVZ(uint32_t instruction_base) {
   return params;
 }
 
-void function_ADDS_ER(int *params) { // el bit 21 de output es 0, no 1
+void function_ADDS_ER(int *params) {
+  /*
+  Adds the registers params[1] and params[0] and saves it in the
+  register params[2]
+
+  params:
+    params: the parameters needed to perform the instruction correctly
+
+  returns:
+    None
+  */ 
   int x1 = CURRENT_STATE.REGS[params[1]];
   int x2 = CURRENT_STATE.REGS[params[0]];
   int x0 = x1 + x2;
@@ -217,6 +298,18 @@ void function_ADDS_ER(int *params) { // el bit 21 de output es 0, no 1
 }
 
 void function_ADDS_I(int *params) {
+  /*
+  Adds the register params[2] and the immediate params[1] and 
+  saves it in the register params[3]. It also checks params[0] == 1
+  to see if a shift is needed to be performed on the immediate.
+
+  params:
+    params: the parameters needed to perform the instruction correctly
+
+  returns:
+    None
+  */ 
+
   int x1 = CURRENT_STATE.REGS[params[2]];
   int imm = params[1];
   if (params[0] == 1) {
@@ -230,12 +323,24 @@ void function_ADDS_I(int *params) {
 }
 
 void function_SUBS_CMP_ER(int *params) {
-  // subs_er el bit 21 de output es 0, no 1
+  /*
+  Substratcs the registers params[1] and params[0] and saves it in the
+  register params[2]. If the destination register params[2] is the register
+  31, it runs as a CMP function, therefore, it updates only the flags and
+  does not save anything to the registers.
+
+  params:
+    params: the parameters needed to perform the instruction correctly
+
+  returns:
+    None
+  */ 
+  
   int x1 = CURRENT_STATE.REGS[params[1]];
   int x2 = CURRENT_STATE.REGS[params[0]];
   int x0 = x1 - x2;
 
-  if (params[2] != 31) { // esto en binario o que?
+  if (params[2] != 31) {
     NEXT_STATE.REGS[params[2]] = x0;
   }
   update_flags(x0);
@@ -243,6 +348,20 @@ void function_SUBS_CMP_ER(int *params) {
 }
 
 void function_SUBS_CMP_I(int *params) {
+  /*
+  Substratcs the register params[2] and the immediate params[1] and saves it 
+  in the register params[3]. If the destination register params[2] is the
+  register 31, it runs as a CMP function, therefore, it updates only the flags
+  and does not save anything to the registers. It also checks params[0] == 1
+  to see if a shift is needed to be performed on the immediate.
+
+  params:
+    params: the parameters needed to perform the instruction correctly
+
+  returns:
+    None
+  */ 
+
   int x1 = CURRENT_STATE.REGS[params[2]];
   int imm = params[1];
   if (params[0] == 1) {
@@ -250,7 +369,7 @@ void function_SUBS_CMP_I(int *params) {
   }
   int x0 = x1 - imm;
 
-  if (params[2] != 31) { // esto en binario o que?
+  if (params[2] != 31) {
     NEXT_STATE.REGS[params[3]] = x0;
   }
   update_flags(x0);
@@ -258,38 +377,78 @@ void function_SUBS_CMP_I(int *params) {
 }
 
 void function_HLT(int *params) {
-  RUN_BIT = 0; // habria que chequear params?
+  /*
+  Sets RUN_BIT to 0, and stops the simulation.
+
+  params:
+    params: the parameters needed to perform the instruction correctly
+
+  returns:
+    None
+  */ 
+  RUN_BIT = 0;
   NEXT_STATE.PC += 4;
 }
 
 void function_ANDS_SR(int *params) {
-  // hay un shift en el la instruccion y en la consigna no dice que no lo
-  // usemos. (igual para eor)
+  /*
+  Performs a bitwise AND operation between the registers params[1] and
+  params[0], and saves it in the register params[2].
+
+  params:
+    params: the parameters needed to perform the instruction correctly
+
+  returns:
+    None
+  */
+  
   int x1 = CURRENT_STATE.REGS[params[1]];
   int x2 = CURRENT_STATE.REGS[params[0]];
   int x0 = x1 & x2;
   update_flags(x0);
-  NEXT_STATE.REGS[params[2]] = x0; // tiene que ser con 64 bits
+  NEXT_STATE.REGS[params[2]] = x0;
   NEXT_STATE.PC += 4;
 }
 
-void function_EOR_SR(int *params) { // aclaracion: no actualiza flags
+void function_EOR_SR(int *params) {
+  /*
+  Performs a bitwise XOR operation between the registers params[1] and
+  params[0], and saves it in the register params[2].
+
+  params:
+    params: the parameters needed to perform the instruction correctly
+
+  returns:
+    None
+  */
+
   int x1 = CURRENT_STATE.REGS[params[1]];
   int x2 = CURRENT_STATE.REGS[params[0]];
   int x0 = x1 ^ x2;
-  NEXT_STATE.REGS[params[2]] = x0; // tiene que ser con 64 bits
+  NEXT_STATE.REGS[params[2]] = x0;
   NEXT_STATE.PC += 4;
 }
 
-void function_ORR_SR(int *params) { // aclaracion: no actualiza flags
+void function_ORR_SR(int *params) {
+  /*
+  Performs a bitwise OR operation between the registers params[1] and
+  params[0], and saves it in the register params[2].
+
+  params:
+    params: the parameters needed to perform the instruction correctly
+
+  returns:
+    None
+  */ 
+
   int x1 = CURRENT_STATE.REGS[params[1]];
   int x2 = CURRENT_STATE.REGS[params[0]];
   int x0 = x1 | x2;
-  NEXT_STATE.REGS[params[2]] = x0; // tiene que ser con 64 bits
+  NEXT_STATE.REGS[params[2]] = x0;
   NEXT_STATE.PC += 4;
 }
 
-void function_B(int *params) { // no entiendo la aclaracion de la consigna
+void function_B(int *params) {
   /*
   Unconditional branch, set program counter to a new adress which depends on
   current program counter and params[0].
@@ -301,8 +460,8 @@ void function_B(int *params) { // no entiendo la aclaracion de la consigna
     None
   */
   int32_t imms = sign_extend32(params[0], 26);
-  int offset = (imms) * 4; // signed
-  NEXT_STATE.PC += offset; // chequear
+  int offset = (imms) * 4;
+  NEXT_STATE.PC += offset;
 }
 
 void function_BR(int *params) {
@@ -457,12 +616,24 @@ void function_LSL_LSR_I(int *params) {
 }
 
 void function_STUR(int *params) {
+  /*
+  Saves the value saved in the register params[2] to the memory value stored in
+  the register params[1] after aplying an offset (params[0]) to said address.
+  Before that, the offset is extended to 64 bits using sign_extend().
+
+  params:
+    params: the parameters needed to perform the instruction correctly
+
+  returns:
+    None
+  */ 
+
   int value = CURRENT_STATE.REGS[params[2]];
   int address = CURRENT_STATE.REGS[params[1]];
   int64_t offset = sign_extend(params[0], 9);
 
   if (address == 31)
-    return; // ver que hacemos si el address es 31
+    return;
 
   address = address + offset;
 
@@ -471,15 +642,28 @@ void function_STUR(int *params) {
 }
 
 void function_STURB(int *params) {
+  /*
+  Saves the least significant byte value saved in the register params[2] to 
+  the memory value stored in the register params[1] after aplying an offset
+  (params[0]) to said address. Before that, the offset is extended to 64 bits
+  using sign_extend().
+
+  params:
+    params: the parameters needed to perform the instruction correctly
+
+  returns:
+    None
+  */ 
+
   int value = CURRENT_STATE.REGS[params[2]];
   int64_t address = CURRENT_STATE.REGS[params[1]];
   int64_t offset = sign_extend(params[0], 9);
 
   if (address == 31)
-    return; // ver que hacemos si el address es 31
+    return;
 
   uint32_t least_sig_byte =
-      value & 0xFF; // asumiendo que quiere los menos significativos
+      value & 0xFF;
   address = address + offset;
   uint32_t saved = mem_read_32(address);
   saved &= 0xFFFFFF00;
@@ -489,15 +673,28 @@ void function_STURB(int *params) {
 }
 
 void function_STURH(int *params) {
+  /*
+  Saves the two least significant byte value saved in the register params[2]
+  to the memory value stored in the register params[1] after aplying an offset
+  (params[0]) to said address. Before that, the offset is extended to 64 bits
+  using sign_extend().
+
+  params:
+    params: the parameters needed to perform the instruction correctly
+
+  returns:
+    None
+  */ 
+
   int value = CURRENT_STATE.REGS[params[2]];
   int64_t address = CURRENT_STATE.REGS[params[1]];
   int64_t offset = sign_extend(params[0], 9);
 
   if (address == 31)
-    return; // ver que hacemos si el address es 31
+    return;
 
   uint32_t least_sig_2bytes =
-      value & 0xFFFF; // asumiendo que quiere los menos significativos
+      value & 0xFFFF;
   address = address + offset;
   uint32_t saved = mem_read_32(address);
   saved &= 0xFFFF0000;
@@ -508,12 +705,25 @@ void function_STURH(int *params) {
 }
 
 void function_LDUR(int *params) {
+  /*
+  Saves the value saved in the address params[1] after aplying an offset
+  (params[0]) to said address. Before that, the offset is extended to 64 bits using 
+  sign_extend(). The value is stored in the register params[2].
+
+
+  params:
+    params: the parameters needed to perform the instruction correctly
+
+  returns:
+    None
+  */ 
+
   int value = CURRENT_STATE.REGS[params[2]];
   int address = CURRENT_STATE.REGS[params[1]];
   int64_t offset = sign_extend(params[0], 9);
 
   if (address == 31)
-    return; // ver que hacemos si el address es 31
+    return;
 
   address = address + offset;
 
@@ -526,12 +736,25 @@ void function_LDUR(int *params) {
 }
 
 void function_LDURB(int *params) {
+  /*
+  Saves the least significant byte saved in the address params[1] after 
+  aplying an offset (params[0]) to said address. Before that, the offset
+  is extended to 64 bits using sign_extend(). The value is stored in the 
+  register params[2].
+
+  params:
+    params: the parameters needed to perform the instruction correctly
+
+  returns:
+    None
+  */ 
+
   int value = CURRENT_STATE.REGS[params[2]];
   int address = CURRENT_STATE.REGS[params[1]];
   int64_t offset = sign_extend(params[0], 9);
 
   if (address == 31)
-    return; // ver que hacemos si el address es 31
+    return;
 
   address = address + offset;
 
@@ -544,13 +767,26 @@ void function_LDURB(int *params) {
 }
 
 void function_LDURH(int *params) {
+  /*
+  Saves the two least significant bytes saved in the address params[1] after
+  aplying an offset (params[0]) to said address. Before that, the offset is
+  extended to 64 bits using sign_extend(). The value is stored in the
+  register params[2].
+
+
+  params:
+    params: the parameters needed to perform the instruction correctly
+
+  returns:
+    None
+  */ 
 
   int value = CURRENT_STATE.REGS[params[2]];
   int address = CURRENT_STATE.REGS[params[1]];
   int64_t offset = sign_extend(params[0], 9);
 
   if (address == 31)
-    return; // ver que hacemos si el address es 31
+    return;
 
   address = address + offset;
 
