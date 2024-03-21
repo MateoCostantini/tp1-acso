@@ -25,6 +25,8 @@ typedef struct {
 
 // El PC esta en bytes o bits para ver si sumarle 4 o 32
 
+// sacar prints
+
 void update_flags(int n) {
   if (n == 0) {
     NEXT_STATE.FLAG_Z = 1;
@@ -316,7 +318,7 @@ void function_BNE(int *params) {
 void function_BGT(int *params) {
   int32_t imms = sign_extend32(params[0], 19);
   if (CURRENT_STATE.FLAG_Z == 0 && CURRENT_STATE.FLAG_N == 0) {
-    NEXT_STATE.PC = imms * 4;
+    NEXT_STATE.PC += imms * 4;
   } else {
     NEXT_STATE.PC += 4;
   }
@@ -325,7 +327,7 @@ void function_BGT(int *params) {
 void function_BLT(int *params) {
   if (CURRENT_STATE.FLAG_N == 1) {
     int32_t imms = sign_extend32(params[0], 19);
-    NEXT_STATE.PC = imms * 4;
+    NEXT_STATE.PC += imms * 4;
   } else {
     NEXT_STATE.PC += 4;
   }
@@ -334,7 +336,7 @@ void function_BLT(int *params) {
 void function_BGE(int *params) {
   int32_t imms = sign_extend32(params[0], 19);
   if (CURRENT_STATE.FLAG_N == 0) {
-    NEXT_STATE.PC = imms * 4;
+    NEXT_STATE.PC += imms * 4;
   } else {
     NEXT_STATE.PC += 4;
   }
@@ -343,7 +345,7 @@ void function_BGE(int *params) {
 void function_BLE(int *params) {
   int32_t imms = sign_extend32(params[0], 19);
   if (!(CURRENT_STATE.FLAG_N == 0 && CURRENT_STATE.FLAG_Z == 0)) {
-    NEXT_STATE.PC = imms * 4;
+    NEXT_STATE.PC += imms * 4;
   } else {
     NEXT_STATE.PC += 4;
   }
