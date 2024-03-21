@@ -290,14 +290,46 @@ void function_ORR_SR(int *params) { // aclaracion: no actualiza flags
 }
 
 void function_B(int *params) { // no entiendo la aclaracion de la consigna
+  /*
+  Unconditional branch, set program counter to a new adress which depends on
+  current program counter and params[0].
+
+  params:
+    params: the parameters needed to perform the instruction correctly
+
+  returns:
+    None
+  */
   int32_t imms = sign_extend32(params[0], 26);
   int offset = (imms) * 4; // signed
   NEXT_STATE.PC += offset; // chequear
 }
 
-void function_BR(int *params) { NEXT_STATE.PC = CURRENT_STATE.REGS[params[0]]; }
+void function_BR(int *params) {
+  /*
+  Unconditional branch, set program counter to a new adress which does not
+  depend on current program counter.
+
+  params:
+    params: the parameters needed to perform the instruction correctly
+
+  returns:
+    None
+  */
+  NEXT_STATE.PC = CURRENT_STATE.REGS[params[0]];
+}
 
 void function_BEQ(int *params) {
+  /*
+  Conditional branch, set program counter to a new adress which depends on
+  current program counter and params[0]. Condition: flag z == 1.
+
+  params:
+    params: the parameters needed to perform the instruction correctly
+
+  returns:
+    None
+  */
   int32_t imms = sign_extend32(params[0], 19);
   if (CURRENT_STATE.FLAG_Z == 1) {
     NEXT_STATE.PC += (imms) * 4;
@@ -307,6 +339,16 @@ void function_BEQ(int *params) {
 }
 
 void function_BNE(int *params) {
+  /*
+  Conditional branch, set program counter to a new adress which depends on
+  current program counter and params[0]. Condition: flag z == 0.
+
+  params:
+    params: the parameters needed to perform the instruction correctly
+
+  returns:
+    None
+  */
   int32_t imms = sign_extend32(params[0], 19);
   if (CURRENT_STATE.FLAG_Z == 0) {
     NEXT_STATE.PC += imms * 4;
@@ -316,6 +358,17 @@ void function_BNE(int *params) {
 }
 
 void function_BGT(int *params) {
+  /*
+  Conditional branch, set program counter to a new adress which depends on
+  current program counter and params[0]. Conditions: flag Z == 0 and flag N ==
+  flag V
+
+  params:
+    params: the parameters needed to perform the instruction correctly
+
+  returns:
+    None
+  */
   int32_t imms = sign_extend32(params[0], 19);
   if (CURRENT_STATE.FLAG_Z == 0 && CURRENT_STATE.FLAG_N == 0) {
     NEXT_STATE.PC += imms * 4;
@@ -325,6 +378,16 @@ void function_BGT(int *params) {
 }
 
 void function_BLT(int *params) {
+  /*
+  Conditional branch, set program counter to a new adress which depends on
+  current program counter and params[0]. Conditions: flag N != flag V.
+
+  params:
+    params: the parameters needed to perform the instruction correctly
+
+  returns:
+    None
+  */
   if (CURRENT_STATE.FLAG_N == 1) {
     int32_t imms = sign_extend32(params[0], 19);
     NEXT_STATE.PC += imms * 4;
@@ -334,6 +397,16 @@ void function_BLT(int *params) {
 }
 
 void function_BGE(int *params) {
+  /*
+  Conditional branch, set program counter to a new adress which depends on
+  current program counter and params[0]. Conditions: flag N == flag V.
+
+  params:
+    params: the parameters needed to perform the instruction correctly
+
+  returns:
+    None
+  */
   int32_t imms = sign_extend32(params[0], 19);
   if (CURRENT_STATE.FLAG_N == 0) {
     NEXT_STATE.PC += imms * 4;
@@ -343,6 +416,17 @@ void function_BGE(int *params) {
 }
 
 void function_BLE(int *params) {
+  /*
+  Conditional branch, set program counter to a new adress which depends on
+  current program counter and params[0]. Conditions: not(flag Z == 0 and flag N
+  == flag V).
+
+  params:
+    params: the parameters needed to perform the instruction correctly
+
+  returns:
+    None
+  */
   int32_t imms = sign_extend32(params[0], 19);
   if (!(CURRENT_STATE.FLAG_N == 0 && CURRENT_STATE.FLAG_Z == 0)) {
     NEXT_STATE.PC += imms * 4;
@@ -352,6 +436,16 @@ void function_BLE(int *params) {
 }
 
 void function_LSL_LSR_I(int *params) {
+  /*
+  Makes a logical shift to the value of the register params[2]. The shift can be to the right or left depending on params[1].
+  The amount of shifts is defined in params[0] and the result is stored in the register params[3].
+
+  params:
+    params: the parameters needed to perform the instruction correctly
+
+  returns:
+    None
+  */
   int x1 = CURRENT_STATE.REGS[params[2]];
   int shift = params[0];
   if (params[1] == 0b111111) {
@@ -429,7 +523,6 @@ void function_LDUR(int *params) {
 
   NEXT_STATE.REGS[params[2]] = combined;
   NEXT_STATE.PC += 4;
-
 }
 
 void function_LDURB(int *params) {
@@ -451,6 +544,7 @@ void function_LDURB(int *params) {
 }
 
 void function_LDURH(int *params) {
+
   int value = CURRENT_STATE.REGS[params[2]];
   int address = CURRENT_STATE.REGS[params[1]];
   int64_t offset = sign_extend(params[0], 9);
@@ -469,22 +563,37 @@ void function_LDURH(int *params) {
 }
 
 void function_MOVZ(int *params) {
-  printf("entre a movz\n\n");
-  int imm = params[0]; // ver tipo
+  /*
+  Saves and immediate (params[0]) value in the register params[1].
+
+  params:
+    params: the parameters needed to perform the instruction correctly
+
+  returns:
+    None
+  */
+  int imm = params[0];
   NEXT_STATE.REGS[params[1]] = imm;
   NEXT_STATE.PC += 4;
 }
 
-// definir cada instruccion con su opcode
 Instruction **build_instructions() {
-  const int instructions_quantity =
-      23; // la defini tambien en sim.c, identify_instruction
+  /*
+  Creates every possible instruction and generates and array with them.
+  It links every instruction with it's opcode, function to idenrify it's
+  parameters, and a function to execute the instruction.
+
+  params:
+    None
+
+  Returns:
+    instructions: Array of pointers to Instructions.
+  */
+
   Instruction **instructions = malloc(sizeof(Instruction *) * 27);
   if (instructions == NULL) {
     return NULL;
   }
-  // tal vez en vez de hacerlo malloc hacerlo estatico total en cada posicion
-  // siempre se mantiene el mismo punetro a struct
   Instruction *ADDS_ER = malloc(sizeof(Instruction));
   if (ADDS_ER == NULL)
     return NULL;
@@ -520,9 +629,7 @@ Instruction **build_instructions() {
   Instruction *HLT = malloc(sizeof(Instruction));
   if (HLT == NULL)
     return NULL;
-  HLT->opcode =
-      (uint32_t)0b11010100010000000000000000000000; // chequear si falta un 0
-                                                    // por la consigna
+  HLT->opcode = (uint32_t)0b11010100010000000000000000000000;
   HLT->identify_params = identify_params_HLT;
   HLT->instruction_function = function_HLT;
   instructions[4] = HLT;
@@ -597,7 +704,6 @@ Instruction **build_instructions() {
   BLT->opcode = (uint32_t)0b01010100000000000000000000001011;
   BLT->identify_params = identify_params_Bcond;
   BLT->instruction_function = function_BLT;
-  // agregar funciones
   instructions[13] = BLT;
 
   Instruction *BGE = malloc(sizeof(Instruction));
@@ -619,7 +725,7 @@ Instruction **build_instructions() {
   Instruction *LSL_LSR_I = malloc(sizeof(Instruction));
   if (LSL_LSR_I == NULL)
     return NULL;
-  LSL_LSR_I->opcode = (uint32_t)0b11010011000000000000000000000000; // imms
+  LSL_LSR_I->opcode = (uint32_t)0b11010011000000000000000000000000;
   LSL_LSR_I->identify_params = identify_params_LSL_LSR_I;
   LSL_LSR_I->instruction_function = function_LSL_LSR_I;
   instructions[16] = LSL_LSR_I;
